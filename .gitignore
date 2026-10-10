@@ -27,6 +27,7 @@ htmlcov/
 .coverage.*
 
 # Logs and local databases
+private_uploads/
 *.log
 *.sqlite
 *.sqlite3
