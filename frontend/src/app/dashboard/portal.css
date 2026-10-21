@@ -1,0 +1,47 @@
+/* Customer portal only; no changes to public pages or administrator styling. */
+.customer-portal { min-height: 100dvh; background: #f6f8f5; color: #244238; }
+.customer-portal :where(a,button,input:not(.ui-field-control),select:not(.ui-field-control),textarea,summary):focus-visible { outline: 3px solid #b98a15; outline-offset: 3px; }
+.customer-portal .portal-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.customer-portal .portal-eyebrow { color: #839184; font-size: .625rem; font-weight: 650; letter-spacing: .16em; margin-bottom: .75rem; }
+.customer-portal .portal-heading h1 { color: #193c2f; font-size: clamp(1.5rem,2.5vw,1.875rem); line-height: 1.3; font-weight: 750; letter-spacing: -.035em; }
+.customer-portal .portal-description { margin-top: .65rem; color: #768579; font-size: .875rem; line-height: 1.75; max-width: 43rem; }
+.customer-portal .portal-panel { min-width: 0; background: white; border: 1px solid #e1e8df; border-radius: 1.125rem; overflow: hidden; box-shadow: 0 2px 5px #1b3f2503; }
+.customer-portal .portal-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid #edf1eb; }
+.customer-portal .portal-panel-heading h2 { font-size: .9375rem; font-weight: 700; }
+.customer-portal .portal-panel-heading p { color: #7b897e; font-size: .75rem; line-height: 1.6; margin-top: .35rem; }
+.customer-portal .portal-button { display: inline-flex; justify-content: center; align-items: center; gap: .5rem; min-height: 42px; padding: .7rem 1rem; border-radius: .75rem; background: #0d593f; color: white; font-size: .8125rem; font-weight: 600; }
+.customer-portal .portal-button:hover { background: #104d39; }
+.customer-portal .portal-button:disabled { opacity: .5; cursor: wait; }
+.customer-portal .portal-button-secondary { color: #326146; background: white; border: 1px solid #d9e3d8; }
+.customer-portal .portal-button-secondary:hover { background: #eef5ea; }
+.customer-portal .portal-text-button { white-space: nowrap; padding: .4rem .6rem; color: #256647; font-size: .75rem; font-weight: 650; border-radius: .5rem; }
+.customer-portal .portal-text-button:hover { background: #edf5e9; }
+.customer-portal .portal-text-button:disabled { opacity: .5; }
+.customer-portal .portal-status { display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: .75rem; line-height: 1.6; color: #7d8c80; }
+.customer-portal .portal-status-error { padding: .8rem 1rem; border: 1px solid #efd9ac; background: #fffaf0; border-radius: .75rem; color: #916115; }
+.customer-portal .portal-empty { padding: 3.5rem 1.5rem; text-align: center; }
+.customer-portal .portal-empty-icon { display: inline-flex; padding: 1.2rem; border: 1px solid #e1ebda; background: #f4f8ee; color: #648350; border-radius: 1.4rem; margin-bottom: 1.3rem; }
+.customer-portal .portal-empty h2 { font-size: 1rem; font-weight: 650; }
+.customer-portal .portal-empty p { max-width: 30rem; margin: .7rem auto 0; color: #79877a; font-size: .8125rem; line-height: 1.85; }
+.customer-portal .portal-metric { padding: 1.4rem; border-radius: 1.125rem; border: 1px solid #e1e8df; background: white; color: #355744; }
+.customer-portal .portal-metric-icon { display: inline-flex; padding: .5rem; background: #f0f5eb; color: #648348; border-radius: .7rem; }
+.customer-portal .portal-metric-accent { background: #154e38; color: white; border-color: #154e38; }
+.customer-portal .portal-metric-accent .portal-metric-icon { background: #ffffff12; color: #ecc85d; }
+.customer-portal .portal-nav-link { display: flex; align-items: center; gap: .85rem; padding: .85rem 1rem; border-radius: .75rem; color: #7b8b7c; font-size: .8125rem; font-weight: 500; }
+.customer-portal .portal-nav-link:hover { background: #f4f7ef; color: #345c3d; }
+.customer-portal .portal-nav-link[aria-current="page"] { color: #275339; background: #eef4e6; font-weight: 650; }
+.customer-portal .portal-mobile-menu { margin: 0; padding: 0; border: 0; width: min(320px,90vw); max-width: none; height: 100dvh; max-height: 100dvh; background: white; }
+.customer-portal .portal-mobile-menu::backdrop { background: #17352599; backdrop-filter: blur(3px); }
+.customer-portal .portal-table-scroll { overflow-x: auto; }
+.customer-portal .portal-table { min-width: 650px; width: 100%; text-align: left; font-size: .8125rem; line-height: 1.65; }
+.customer-portal .portal-table thead { background: #f8faf6; color: #7d8b7c; text-transform: uppercase; font-size: .625rem; letter-spacing: .07em; }
+.customer-portal .portal-table th { white-space: nowrap; font-weight: 650; }
+.customer-portal .portal-table :is(th,td) { padding: 1rem 1.25rem; }
+.customer-portal .portal-table td { border-top: 1px solid #edf1eb; }
+.customer-portal .portal-table tbody tr:hover { background: #fafcf8; }
+@media(max-width:639px) {
+  .customer-portal .portal-heading { align-items: stretch; flex-direction: column; }
+  .customer-portal .portal-heading > div > a { width: 100%; }
+  .customer-portal .portal-metric { padding: 1.1rem; }
+  .customer-portal .portal-panel-heading { padding: 1rem; }
+}
