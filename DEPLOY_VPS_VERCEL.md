@@ -19,6 +19,8 @@ Gunakan `docker-compose.vps.yml` untuk susunan ini. `docker-compose.production.y
 
 Pastikan perubahan terbaru, termasuk file deployment baru, sudah Anda commit dan push ke repository yang akan dihubungkan ke Vercel. Jangan memasukkan `.env`, `.env.vps`, Client Secret, backup, atau upload privat ke Git. Commit lama akan menghasilkan aplikasi lama.
 
+Repository yang digunakan adalah [Marshel2727/Full-Stack-SolarSync](https://github.com/Marshel2727/Full-Stack-SolarSync), dengan source deployment pada branch `fitur/backend`. Gunakan branch yang sama untuk clone VPS dan Production Branch Vercel.
+
 Tambahkan DNS berikut tanpa mengubah record domain utama atau website lain:
 
 | Record | Jenis | Tujuan |
@@ -32,12 +34,12 @@ Di Vercel, buat project dari repository yang sama, pilih **Root Directory `front
 
 ## 2. Siapkan backend di VPS
 
-Perintah pada bagian ini dijalankan di terminal **SSH VPS**. Ganti `URL_REPOSITORY_ANDA`. Untuk repo privat, gunakan akses Git yang sudah disiapkan.
+Perintah pada bagian ini dijalankan di terminal **SSH VPS**. Untuk repo privat, gunakan akses Git yang sudah disiapkan.
 
 ```bash
 sudo mkdir -p /opt/solarsync
 sudo chown "$USER":"$(id -gn)" /opt/solarsync
-git clone URL_REPOSITORY_ANDA /opt/solarsync
+git clone --branch fitur/backend https://github.com/Marshel2727/Full-Stack-SolarSync.git /opt/solarsync
 cd /opt/solarsync
 docker compose version
 ```
@@ -169,6 +171,7 @@ Jika belum terpasang, ikuti [instruksi Certbot untuk Nginx](https://certbot.eff.
 | Pengaturan | Nilai |
 | --- | --- |
 | Framework | Next.js |
+| Production Branch | `fitur/backend` |
 | Root Directory | `frontend` |
 | Node.js | `24.x` |
 | Install Command | `npm ci` |

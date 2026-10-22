@@ -98,8 +98,8 @@ Siapkan Git dan Docker Desktop dengan **Linux containers** serta Docker Compose 
 Perintah berikut menggunakan PowerShell. Jalankan dari folder tempat Anda ingin menyimpan proyek:
 
 ```powershell
-git clone https://github.com/Marshel2727/fullstuck-clean-energy.git
-Set-Location .\fullstuck-clean-energy
+git clone --branch fitur/backend https://github.com/Marshel2727/Full-Stack-SolarSync.git
+Set-Location .\Full-Stack-SolarSync
 ```
 
 Jika proyek sudah tersedia, langsung masuk ke folder proyek tersebut tanpa clone ulang.
