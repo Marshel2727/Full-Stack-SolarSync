@@ -17,7 +17,7 @@ cleanup() {
     if (( archive_created )); then docker rm "$archive_container" >/dev/null || true; fi
     if (( paused )); then
         "${compose[@]}" exec -T solarsync-db rm -f -- "$sql_temp" || true
-        if ! "${compose[@]}" start --wait solarsync-backend; then result=1; fi
+        if ! "${compose[@]}" up -d --wait --no-deps solarsync-backend; then result=1; fi
     fi
     exit "$result"
 }

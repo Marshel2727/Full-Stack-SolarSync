@@ -37,7 +37,7 @@ try {
     if ($archiveCreated) { & docker rm $archiveContainer | Out-Null }
     if ($paused) {
         & docker @compose exec -T solarsync-db rm -f -- $sqlTemp
-        Invoke-DockerChecked ($compose + @('start', '--wait', 'solarsync-backend'))
+        Invoke-DockerChecked ($compose + @('up', '-d', '--wait', '--no-deps', 'solarsync-backend'))
     }
     Pop-Location
 }
