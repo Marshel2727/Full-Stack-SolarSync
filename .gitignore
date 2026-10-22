@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+!.env.production.example
+!.env.vps.example
 *.pem
 *.key
 
@@ -23,6 +25,11 @@ __pycache__/
 .ruff_cache/
 coverage/
 htmlcov/
+playwright-report/
+test-results/
+.e2e-state/
+backups/
+backups-vps-*/
 .coverage
 .coverage.*
 

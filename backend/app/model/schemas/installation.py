@@ -26,3 +26,10 @@ class StatusInput(BaseModel):
     status: STATUS
     note: str = Field(min_length=1)
     version: int = Field(gt=0)
+
+
+class LinkAccountInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    userId: int = Field(gt=0)
+    ownershipConfirmed: Literal[True]
+    verificationNote: str = Field(min_length=10, max_length=1000)

@@ -76,8 +76,31 @@ export default function AdminWorkspaceLayout({ children }: { children: ReactNode
       <main id="admin-content" tabIndex={-1} className="mx-auto w-full max-w-7xl p-4 pb-10 sm:p-6 lg:p-8">{children}</main>
       <footer className="px-6 pb-6 text-xs text-slate-400 lg:px-10">SolarSync · Workspace administrator</footer>
     </div>
-    <dialog ref={dialog} id="admin-mobile-menu" aria-label="Navigasi admin" className="admin-mobile-dialog"
-      onCancel={() => setMenuOpen(false)} onClick={event => { if (event.target === event.currentTarget) setMenuOpen(false); }}>
+    <dialog
+      ref={dialog}
+      id="admin-mobile-menu"
+      {...({ closedby: 'any' } as any)}
+      aria-label="Navigasi admin"
+      className="admin-mobile-dialog"
+      onCancel={() => setMenuOpen(false)}
+      onClose={() => setMenuOpen(false)}
+      onClick={event => {
+        if (!('closedBy' in HTMLDialogElement.prototype)) {
+          const el = event.currentTarget;
+          if (event.target !== el) return;
+          const rect = el.getBoundingClientRect();
+          const isDialogContent = (
+            rect.width > 0 &&
+            rect.height > 0 &&
+            rect.top <= event.clientY &&
+            event.clientY <= rect.top + rect.height &&
+            rect.left <= event.clientX &&
+            event.clientX <= rect.left + rect.width
+          );
+          if (!isDialogContent) setMenuOpen(false);
+        }
+      }}
+    >
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-3"><span className="text-xs font-semibold text-emerald-100">NAVIGASI</span>
           <button type="button" autoFocus onClick={() => setMenuOpen(false)} aria-label="Tutup navigasi" className="rounded-lg p-2"><X className="h-5 w-5" /></button>

@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../../../context/AuthContext';
+import { api } from '../../../../lib/api';
+import { privateKey } from '../../../../lib/cache-policy';
+import { useCatalogWrite } from '../../../../lib/queries';
+import { AdminDialog } from '../../../../components/admin/AdminDialog';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '../../../../components/ui/Card';
@@ -8,7 +14,7 @@ import { Button } from '../../../../components/ui/Button';
 import { Input } from '../../../../components/ui/Input';
 import { Select } from '../../../../components/ui/Select';
 import { Badge, StatusBadge } from '../../../../components/ui/Badge';
-import { Modal } from '../../../../components/ui/Modal';
+import { SkeletonLoader } from '../../../../components/ui/SkeletonLoader';
 import { useSolar } from '../../../../context/SolarContext';
 import { AdminDataStatus, AdminEmptyState } from '../../../../components/admin/AdminUI';
 import { RequestStatus } from '../../../../types';
@@ -26,31 +32,6 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-export default function AdminRequestDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const id = params?.id as string;
-  const { getRequestById, updateRequestStatus, updateRequestDetails, showToast, dataState } = useSolar();
-
-  const req = getRequestById(id);
-
-  const [selectedNewStatus, setSelectedNewStatus] = useState<RequestStatus>('Diverifikasi');
-  const [transitionNote, setTransitionNote] = useState('');
-  const [technicianName, setTechnicianName] = useState(req?.assignedTechnician || '');
-  const [surveyDate, setSurveyDate] = useState(req?.surveyDate || '');
-  const [quotationAmount, setQuotationAmount] = useState(req?.finalQuotationIdr || 0);
-
-  if (!req) {
-    return (
-      <div className="space-y-5">
-        <AdminDataStatus state={dataState.requests} label="Pengajuan" />
-        {!dataState.requests.isPending && !dataState.requests.isError && <div className="admin-panel"><AdminEmptyState title="Pengajuan tidak ditemukan" description="Periksa nomor tiket atau kembali ke daftar pengajuan."
-          action={<Link href="/admin/requests" className="admin-primary-link">Kembali ke pengajuan</Link>} /></div>}
-      </div>
-    );
-  }
-
-  // Define valid next transitions from current state
   const getNextValidStatuses = (current: RequestStatus): RequestStatus[] => {
     switch (current) {
       case 'Diajukan':
@@ -68,22 +49,81 @@ export default function AdminRequestDetailPage() {
       case 'Instalasi':
         return ['Selesai'];
       default:
-        return ['Selesai'];
+        return [];
     }
   };
 
-  const validStatuses = getNextValidStatuses(req.status);
+
+export default function AdminRequestDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params?.id as string;
+  const { getRequestById, updateRequestStatus, updateRequestDetails, showToast, dataState } = useSolar();
+
+  const req = getRequestById(id);
+  const { user } = useAuth();
+  const writer = useCatalogWrite();
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [accountId, setAccountId] = useState('');
+  const [ownershipConfirmed, setOwnershipConfirmed] = useState(false);
+  const [verificationNote, setVerificationNote] = useState('');
+  const [linking, setLinking] = useState(false);
+  const linkBusy = useRef(false);
+  const accounts = useQuery({ queryKey: privateKey(user?.id, 'customer-accounts'),
+    enabled: user?.role === 'admin' && linkOpen, staleTime: 0,
+    queryFn: ({ signal }) => api<{ id: string; name: string; email: string }[]>('/admin/customer-accounts', { signal }) });
+  const confirmLink = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (linkBusy.current || !accountId || !ownershipConfirmed || verificationNote.trim().length < 10) return;
+    linkBusy.current = true; setLinking(true);
+    try {
+      await writer.mutateAsync({ path: '/admin/requests/' + encodeURIComponent(id) + '/link-account', method: 'POST',
+        body: { userId: accountId, ownershipConfirmed, verificationNote: verificationNote.trim() } });
+      showToast('Akun terhubung', 'Pengajuan tersedia pada akun pelanggan yang dipilih.');
+      setLinkOpen(false);
+    } catch (error) { showToast('Pengaitan gagal', error instanceof Error ? error.message : 'Coba lagi nanti.', 'error'); }
+    finally { linkBusy.current = false; setLinking(false); }
+  };
+
+  const [selectedNewStatus, setSelectedNewStatus] = useState<RequestStatus | ''>('');
+  const [transitionNote, setTransitionNote] = useState('');
+  const [technicianName, setTechnicianName] = useState(req?.assignedTechnician || '');
+  const [surveyDate, setSurveyDate] = useState(req?.surveyDate || '');
+  const [quotationAmount, setQuotationAmount] = useState(req?.finalQuotationIdr || 0);
+
+  const validStatuses = req ? getNextValidStatuses(req.status) : [];
+  const nextStatus = validStatuses.includes(selectedNewStatus as RequestStatus) ? selectedNewStatus : validStatuses[0] || '';
+  const [isSaving, setIsSaving] = useState(false);
+  const saving = useRef(false);
+  useEffect(() => {
+    setSelectedNewStatus(req ? getNextValidStatuses(req.status)[0] || '' : '');
+    setTransitionNote('');
+  }, [req?.id, req?.status]);
+
+  if (!req) {
+    return (
+      <div className="space-y-5">
+        <AdminDataStatus state={dataState.requests} label="Pengajuan" />
+        {dataState.requests.isPending && <SkeletonLoader count={3} className="h-36 w-full" />}
+        {!dataState.requests.isPending && !dataState.requests.isError && <div className="admin-panel"><AdminEmptyState title="Pengajuan tidak ditemukan" description="Periksa nomor tiket atau kembali ke daftar pengajuan."
+          action={<Link href="/admin/requests" className="admin-primary-link">Kembali ke pengajuan</Link>} /></div>}
+      </div>
+    );
+  }
 
   const handleUpdateStatus = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!transitionNote) {
+    if (saving.current || !nextStatus || !validStatuses.includes(nextStatus)) return;
+    if (!transitionNote.trim()) {
       showToast('Catatan Diperlukan', 'Harap isi catatan alasan perubahan status.', 'warning');
       return;
     }
 
-    const saved = await updateRequestStatus(req.id, selectedNewStatus, transitionNote, 'Admin Operasional');
-    if (!saved) return;
-    setTransitionNote('');
+    saving.current = true; setIsSaving(true);
+    try {
+      const saved = await updateRequestStatus(req.id, nextStatus, transitionNote.trim(), 'Admin Operasional');
+      if (saved) setTransitionNote('');
+    } finally { saving.current = false; setIsSaving(false); }
   };
 
   return (
@@ -112,7 +152,11 @@ export default function AdminRequestDetailPage() {
         </div>
         <AdminDataStatus state={dataState.requests} label="Pengajuan" />
       </div>
-      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-6 text-amber-800">Saat ini hanya perubahan status yang dapat disimpan. Jadwal, teknisi, penawaran, dan dokumen belum dapat diperbarui melalui halaman ini.</p>
+      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-6 text-amber-800">Perubahan status dan pengaitan akun pelanggan dapat disimpan. Jadwal, teknisi, penawaran, dan dokumen belum dapat diperbarui melalui halaman ini.</p>
+      <div className="admin-panel flex flex-wrap items-center justify-between gap-4 p-5">
+        <div><h2 className="text-sm font-semibold">Akun pelanggan</h2><p className="mt-1 text-xs leading-6 text-slate-500">{req.accountUserId ? 'Pengajuan sudah terhubung ke akun pelanggan.' : 'Pengajuan tamu perlu ditautkan setelah kepemilikan diverifikasi.'}</p></div>
+        {!req.accountUserId && <Button variant="outline" onClick={() => { setAccountId(''); setVerificationNote(''); setOwnershipConfirmed(false); setLinkOpen(true); }}>Hubungkan akun pelanggan</Button>}
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left 2 Cols: Details & Timeline */}
@@ -212,10 +256,12 @@ export default function AdminRequestDetailPage() {
               <h3 className="text-base font-bold text-slate-800 font-heading">Ubah Status Alur Kerja</h3>
             </div>
 
+            {!validStatuses.length && <p className="text-sm text-slate-600">Pengajuan sudah berada pada status akhir.</p>}
             <form onSubmit={handleUpdateStatus} className="space-y-4">
               <Select
                 label="Pilih Status Berikutnya yang Valid"
-                value={selectedNewStatus}
+                value={nextStatus}
+                disabled={isSaving || !validStatuses.length}
                 onChange={(e) => setSelectedNewStatus(e.target.value as RequestStatus)}
                 options={validStatuses.map((s) => ({ value: s, label: `Transisi ke: ${s}` }))}
                 helperText="Sistem membatasi transisi hanya ke tahapan berikutnya yang sah."
@@ -264,6 +310,7 @@ export default function AdminRequestDetailPage() {
 
               <Button
                 type="submit"
+                isLoading={isSaving} disabled={!validStatuses.length}
                 variant="primary"
                 size="md"
                 className="w-full font-bold shadow-sm"
@@ -275,6 +322,15 @@ export default function AdminRequestDetailPage() {
           </Card>
         </div>
       </div>
+      <AdminDialog isOpen={linkOpen} onClose={() => { if (!linkBusy.current) setLinkOpen(false); }} title="Hubungkan pengajuan ke akun">
+        <form onSubmit={confirmLink} className="space-y-5"><fieldset disabled={linking} className="space-y-5">
+          <p className="text-sm leading-7 text-slate-600">Pastikan pemilik akun memang berhak mengakses pengajuan, lampiran, dan data pelanggan terkait. Kesamaan email saja tidak cukup.</p>
+          {accounts.isPending ? <SkeletonLoader className="h-16" /> : accounts.isError ? <AdminDataStatus state={accounts} label="Akun pelanggan" /> : <Select label="Pilih akun pelanggan" value={accountId} onChange={event => setAccountId(event.target.value)} options={[{ value: '', label: 'Pilih akun yang telah diverifikasi' }, ...(accounts.data || []).map(account => ({ value: account.id, label: `${account.name} · ${account.email}` }))]} required />}
+          <label className="block text-sm font-medium">Catatan verifikasi<textarea required minLength={10} maxLength={1000} rows={3} value={verificationNote} onChange={event => setVerificationNote(event.target.value)} placeholder="Jelaskan cara kepemilikan dikonfirmasi dengan pelanggan." className="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm" /></label>
+          <label className="flex items-start gap-3 text-sm leading-6"><input type="checkbox" required checked={ownershipConfirmed} onChange={event => setOwnershipConfirmed(event.target.checked)} className="mt-1" />Saya sudah memverifikasi bahwa akun ini milik pemohon yang berhak.</label>
+          <div className="flex justify-end gap-3"><Button type="button" variant="ghost" onClick={() => setLinkOpen(false)}>Batal</Button><Button type="submit" isLoading={linking} disabled={!accountId || !ownershipConfirmed || verificationNote.trim().length < 10}>Hubungkan akun</Button></div>
+        </fieldset></form>
+      </AdminDialog>
     </div>
   );
 }

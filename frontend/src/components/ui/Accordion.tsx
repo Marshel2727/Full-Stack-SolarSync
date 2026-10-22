@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 interface AccordionItem {
@@ -23,6 +23,7 @@ export const Accordion: React.FC<AccordionProps> = ({
   defaultOpenId,
   className = '',
 }) => {
+  const prefix = useId();
   const [openIds, setOpenIds] = useState<string[]>(defaultOpenId ? [defaultOpenId] : []);
 
   const toggle = (id: string) => {
@@ -48,8 +49,11 @@ export const Accordion: React.FC<AccordionProps> = ({
           >
             <button
               type="button"
+              id={`${prefix}-${item.id}-trigger`}
+              aria-expanded={isOpen}
+              aria-controls={`${prefix}-${item.id}-panel`}
               onClick={() => toggle(item.id)}
-              className="flex items-center justify-between w-full p-5 text-left font-medium text-slateText focus:outline-none"
+              className="flex items-center justify-between w-full p-5 text-left font-medium text-slateText focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
             >
               <div className="flex items-center gap-3 pr-4">
                 <span className="font-semibold text-base font-heading">{item.title}</span>
@@ -60,16 +64,26 @@ export const Accordion: React.FC<AccordionProps> = ({
                 )}
               </div>
               <ChevronDown
-                className={`w-5 h-5 text-slateText-muted transition-transform duration-200 shrink-0 ${
+                className={`w-5 h-5 text-slateText-muted transition-transform duration-300 ease-out shrink-0 ${
                   isOpen ? 'transform rotate-180 text-primary' : ''
                 }`}
               />
             </button>
-            {isOpen && (
-              <div className="px-5 pb-5 pt-1 text-sm text-slateText-muted border-t border-slate-100 leading-relaxed animate-fadeIn">
-                {item.content}
+            <div
+              id={`${prefix}-${item.id}-panel`}
+              role="region"
+              aria-labelledby={`${prefix}-${item.id}-trigger`}
+              aria-hidden={!isOpen}
+              className={`grid transition-[grid-template-rows,opacity] duration-250 ease-out ${
+                isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="px-5 pb-5 pt-1 text-sm text-slateText-muted border-t border-slate-100 leading-relaxed">
+                  {item.content}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         );
       })}

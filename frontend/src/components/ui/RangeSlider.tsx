@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface RangeSliderProps {
   label?: string;
@@ -23,12 +23,13 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
   helperText,
   markers,
 }) => {
+  const inputId = useId();
   const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 
   return (
     <div className="w-full space-y-3">
       <div className="flex items-center justify-between">
-        {label && <label className="text-sm font-medium text-slateText">{label}</label>}
+        {label && <label htmlFor={inputId} className="text-sm font-medium text-slateText">{label}</label>}
         <div className="inline-flex items-baseline gap-1 px-3 py-1 bg-primary/10 border border-primary/20 rounded-lg text-primary font-bold text-base font-sans">
           <span>{value.toLocaleString('id-ID')}</span>
           {unit && <span className="text-xs font-medium text-primary-light">{unit}</span>}
@@ -37,6 +38,9 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
 
       <div className="relative flex items-center">
         <input
+          id={inputId}
+          aria-label={label || "Atur nilai"}
+          aria-valuetext={`${value} ${unit}`}
           type="range"
           min={min}
           max={max}
@@ -53,13 +57,14 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
       {markers && markers.length > 0 && (
         <div className="flex justify-between text-[11px] text-slateText-muted font-medium px-1">
           {markers.map((m) => (
-            <span
+            <button type="button"
+              aria-pressed={value === m.value}
               key={m.value}
               className="cursor-pointer hover:text-primary transition-colors"
               onClick={() => onChange(m.value)}
             >
               {m.label}
-            </span>
+            </button>
           ))}
         </div>
       )}

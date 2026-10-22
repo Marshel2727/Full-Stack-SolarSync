@@ -1,5 +1,7 @@
 'use client';
 
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
+import { EmptyState as CatalogEmpty } from '../../components/ui/EmptyState';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Navbar } from '../../components/shared/Navbar';
@@ -14,7 +16,7 @@ import { formatDate } from '../../utils/formatters';
 import { Search, BookOpen, Clock, ArrowRight, Sparkles, User } from 'lucide-react';
 
 export default function KnowledgeCenterPage() {
-  const { articles } = useSolar();
+  const { articles, dataState } = useSolar();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -54,20 +56,21 @@ export default function KnowledgeCenterPage() {
           </p>
 
           {/* Search Bar */}
-          <div className="max-w-md mx-auto pt-2">
+          <search className="max-w-md mx-auto pt-2 block">
             <Input
-              type="text"
+              type="search"
+              aria-label="Cari artikel edukasi"
               placeholder="Cari topik (misal: ROI, perizinan PLN, inverter)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               leftIcon={<Search className="w-4 h-4" />}
             />
-          </div>
+          </search>
         </div>
 
         {/* Category Tabs */}
         <div className="flex justify-center overflow-x-auto">
-          <Tabs
+          <Tabs panelId="knowledge-results"
             tabs={categories}
             activeTab={selectedCategory}
             onChange={(id) => setSelectedCategory(id)}
@@ -76,7 +79,9 @@ export default function KnowledgeCenterPage() {
         </div>
 
         {/* Articles Grid */}
-        {filteredArticles.length > 0 ? (
+        <div role="tabpanel" id="knowledge-results" aria-labelledby={`knowledge-results-tab-${selectedCategory}`} tabIndex={0}>
+        {dataState.articles.isError && <CatalogEmpty title="Data belum dapat dimuat" description="Periksa koneksi lalu coba lagi. Data sebelumnya tetap ditampilkan jika tersedia." actionText="Coba lagi" onAction={() => void dataState.articles.refetch()} />}
+        {dataState.articles.isPending ? (<div className="grid gap-6 md:grid-cols-3">{[1, 2, 3].map(index => <SkeletonLoader key={index} className="h-96" />)}</div>) : filteredArticles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {filteredArticles.map((art) => (
               <Card
@@ -131,7 +136,7 @@ export default function KnowledgeCenterPage() {
               </Card>
             ))}
           </div>
-        ) : (
+        ) : !dataState.articles.isError ? (
           <EmptyState
             title="Tidak Ada Artikel Ditemukan"
             description={`Tidak ada artikel yang cocok dengan kata kunci "${searchQuery}". Coba kata kunci lain atau pilih topik yang berbeda.`}
@@ -141,7 +146,8 @@ export default function KnowledgeCenterPage() {
               setSelectedCategory('all');
             }}
           />
-        )}
+        ) : null}
+        </div>
       </main>
 
       <Footer />

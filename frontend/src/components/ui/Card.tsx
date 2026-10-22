@@ -30,7 +30,9 @@ export const Card: React.FC<CardProps> = ({
     xl: 'p-4 sm:p-6 lg:p-10',
   };
 
-  const hoverStyles = hoverEffect ? 'transition-shadow duration-200 hover:shadow-md' : '';
+  const hoverStyles = hoverEffect
+    ? 'transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-ambient hover:border-primary/30'
+    : '';
 
   return (
     <div

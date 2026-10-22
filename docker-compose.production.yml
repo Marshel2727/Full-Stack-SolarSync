@@ -1,0 +1,56 @@
+# Use with docker-compose.yml and a separate --env-file .env.production.
+# Requires Compose 2.24.4+ for !reset. Public ports belong only to the TLS gateway.
+services:
+  solarsync-backend:
+    ports: !reset []
+    environment:
+      APP_ENVIRONMENT: production
+      COOKIE_SECURE: "true"
+      CORS_ORIGINS: '["https://${PUBLIC_DOMAIN:?Isi PUBLIC_DOMAIN tanpa https atau path}"]'
+      GOOGLE_REDIRECT_URI: https://${PUBLIC_DOMAIN:?Isi PUBLIC_DOMAIN}/api/v1/auth/google/callback
+      METRICS_ENABLED: "false"
+  solarsync-frontend:
+    ports: !reset []
+    build:
+      args:
+        NEXT_PUBLIC_ENABLE_ROLE_DEMO: "false"
+    environment:
+      NEXT_PUBLIC_ENABLE_ROLE_DEMO: "false"
+  solarsync-gateway:
+    image: nginx:stable-alpine
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?Isi PUBLIC_DOMAIN}
+      NGINX_ENVSUBST_FILTER: ^PUBLIC_DOMAIN$
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ops/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - type: bind
+        source: ${TLS_CERT_FILE:?Isi path sertifikat TLS}
+        target: /etc/nginx/tls/fullchain.pem
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${TLS_KEY_FILE:?Isi path private key TLS}
+        target: /etc/nginx/tls/privkey.pem
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      solarsync-backend:
+        condition: service_healthy
+      solarsync-frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped

@@ -22,6 +22,12 @@ class MigrationCapture:
         target = self.metadata.tables[table]
         Index(name, *(target.c[column] for column in columns))
 
+    def add_column(self, table, column):
+        self.metadata.tables[table].append_column(column)
+
+    def create_unique_constraint(self, name, table, columns):
+        self.metadata.tables[table].append_constraint(UniqueConstraint(*columns, name=name))
+
     def create_foreign_key(self, name, source, target, local, remote, **options):
         self.metadata.tables[source].append_constraint(ForeignKeyConstraint(
             local, [f"{target}.{column}" for column in remote],
@@ -82,7 +88,7 @@ class SchemaTests(unittest.TestCase):
                     str(AddConstraint(constraint).compile(dialect=mysql.dialect()))
                     self.assertLessEqual(len(constraint.name), 64)
 
-    def test_initial_migration_matches_models(self):
+    def test_migrations_match_models(self):
         path = Path(__file__).resolve().parents[1] / "alembic/versions/0001_initial_schema.py"
         spec = importlib.util.spec_from_file_location("initial_revision", path)
         migration = importlib.util.module_from_spec(spec)
@@ -96,6 +102,12 @@ class SchemaTests(unittest.TestCase):
         spec.loader.exec_module(cache_migration)
         with patch.object(cache_migration, "op", capture):
             cache_migration.upgrade()
+        path = path.with_name("0003_google_identity.py")
+        spec = importlib.util.spec_from_file_location("google_revision", path)
+        google_migration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(google_migration)
+        with patch.object(google_migration, "op", capture):
+            google_migration.upgrade()
         self.assertEqual(set(capture.metadata.tables), set(Base.metadata.tables))
         for name, table in Base.metadata.tables.items():
             with self.subTest(table=name):

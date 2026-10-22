@@ -5,10 +5,11 @@ export const SkeletonLoader: React.FC<{ className?: string; count?: number }> = 
   count = 1,
 }) => {
   return (
-    <div className="space-y-3 w-full">
+    <div role="status" aria-label="Memuat konten" className="space-y-3 w-full">
       {Array.from({ length: count }).map((_, idx) => (
         <div
           key={idx}
+          aria-hidden="true"
           className={`bg-slate-200/80 animate-pulse rounded-xl ${className}`}
         />
       ))}

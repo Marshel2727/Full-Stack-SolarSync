@@ -2,21 +2,30 @@
 import { useSolar } from '../../../context/SolarContext';
 import { Card } from '../../../components/ui/Card';
 import { StatusBadge } from '../../../components/ui/Badge';
-import { CacheStatus } from '../../../components/shared/CacheStatus';
+import { PortalHeader, PortalStatus, PortalEmpty } from '../../../components/customer/PortalUI';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 import Link from 'next/link';
 export default function InstallationPage() {
   const { requests, dataState } = useSolar();
   const state = dataState.requests;
-  return <section className="workspace-page">
-    <div><h1 className="workspace-title">Pengajuan instalasi</h1><p className="workspace-description">Status dan riwayat pengajuan yang dapat diakses oleh akun Anda.</p></div>
-    <div className="flex flex-wrap items-center justify-end gap-3"><CacheStatus updatedAt={state.dataUpdatedAt} pending={state.isPending} failed={state.isError} />
-      <button type="button" disabled={state.isFetching} onClick={() => void state.refetch()} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50">Segarkan</button></div>
-    {!state.isPending && !state.isError && !requests.length && <Card><p>Belum ada pengajuan yang terhubung ke akun ini.</p>
-      <Link href="/installation-request" className="mt-4 inline-block text-primary underline">Ajukan survei</Link></Card>}
-    {requests.map(request => <Card key={request.id} className="space-y-4">
+  return <section className="space-y-6">
+    <PortalHeader
+      title="Pengajuan instalasi"
+      description="Pantau status, catatan progres, dan lampiran pengajuan yang terhubung ke akun Anda."
+      syncState={{
+        isFetching: state.isFetching,
+        dataUpdatedAt: state.dataUpdatedAt,
+        onRefresh: () => void state.refetch(),
+      }}
+      action={<Link href="/installation-request" className="portal-button">Ajukan survei</Link>}
+    />
+    <PortalStatus state={state} label="Pengajuan" />
+    {state.isPending && <SkeletonLoader className="h-64" count={2} />}
+    {!state.isPending && !state.isError && !requests.length && <div className="portal-panel"><PortalEmpty title="Belum ada pengajuan" description="Mulai pengajuan survei untuk mendiskusikan kebutuhan energi dan lokasi pemasangan Anda." action={<Link href="/installation-request" className="portal-button">Ajukan survei</Link>} /></div>}
+    {requests.map(request => <Card key={request.id} className="space-y-5 !border-[#e1e8df]">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="break-all font-semibold">{request.id}</h2><StatusBadge status={request.status} /></div>
       <p className="text-sm text-slate-600">{request.address}</p>
-      <ol className="space-y-3">{request.timelineLogs?.map((log, index) => <li key={index} className="border-l-2 border-slate-200 pl-4">
+      <ol className="space-y-3">{request.timelineLogs?.map((log, index) => <li key={index} className="border-l-2 border-emerald-200 pl-4">
         <p className="text-sm font-semibold">{log.status}</p><p className="text-xs text-slate-500">{new Date(log.timestamp).toLocaleString('id-ID')}</p><p className="mt-1 text-sm">{log.note}</p>
       </li>)}</ol>
       {!!request.documents?.length && <div><h3 className="text-sm font-semibold">Lampiran</h3><ul className="mt-2 space-y-2">

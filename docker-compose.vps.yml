@@ -1,0 +1,15 @@
+# Backend on an existing Ubuntu VPS; frontend is deployed separately to Vercel.
+# docker compose -p solarsync-vps --env-file .env.vps -f docker-compose.yml -f docker-compose.vps.yml ...
+# Compose 2.24.4+ is required for !override.
+services:
+  solarsync-backend:
+    ports: !override
+      - "127.0.0.1:${VPS_API_PORT:-18000}:8000"
+    environment:
+      APP_ENVIRONMENT: production
+      COOKIE_SECURE: "true"
+      CORS_ORIGINS: '["${FRONTEND_ORIGIN:?Isi FRONTEND_ORIGIN dengan origin HTTPS frontend tanpa slash akhir}"]'
+      GOOGLE_REDIRECT_URI: ${FRONTEND_ORIGIN:?Isi FRONTEND_ORIGIN}/api/v1/auth/google/callback
+      METRICS_ENABLED: "false"
+  solarsync-frontend:
+    profiles: [local-frontend]

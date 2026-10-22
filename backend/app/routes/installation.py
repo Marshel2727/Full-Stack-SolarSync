@@ -6,7 +6,7 @@ from starlette.datastructures import UploadFile
 from starlette.concurrency import run_in_threadpool
 import logging
 from app.utils.uploads import MAX_FILE_BYTES, validate_attachment
-from app.model.schemas.installation import RequestInput, StatusInput
+from app.model.schemas.installation import RequestInput, StatusInput, LinkAccountInput
 from app.routes.dependencies import current_user, admin_user, optional_user
 from app.utils.database import get_db
 from app.service import installation as service
@@ -67,3 +67,8 @@ def download_document(ticket: str, document_id: int, user=Depends(current_user),
 @router.patch("/admin/requests/{ticket}/status")
 def request_status(ticket: str, data: StatusInput, user=Depends(admin_user), db=Depends(get_db)):
     return service.request_status(ticket, data, user, db)
+
+
+@router.post("/admin/requests/{ticket}/link-account")
+def link_account(ticket: str, data: LinkAccountInput, user=Depends(admin_user), db=Depends(get_db)):
+    return service.link_account(ticket, data, user, db)

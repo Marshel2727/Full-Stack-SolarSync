@@ -30,6 +30,7 @@ class User(Base):
     last_login_at = Column(DATETIME(fsp=6), nullable=True)
     created_at = Column(DATETIME(fsp=6), nullable=False, server_default=text("CURRENT_TIMESTAMP(6)"))
     updated_at = Column(DATETIME(fsp=6), nullable=False, server_default=text("CURRENT_TIMESTAMP(6)"), onupdate=text("CURRENT_TIMESTAMP(6)"))
+    google_subject = Column(String(255, collation="ascii_bin"), nullable=True, unique=True)
 
 
 class Customer(Base):

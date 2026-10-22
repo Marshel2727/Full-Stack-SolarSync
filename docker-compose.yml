@@ -1,6 +1,13 @@
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   # Login counters are security state, not disposable response cache entries.
   solarsync-auth-store:
+    logging: *logging
     image: redis:7.4-alpine
     command: ["redis-server", "--maxmemory", "32mb", "--maxmemory-policy", "noeviction", "--save", "", "--appendonly", "yes", "--appendfsync", "everysec"]
     volumes:
@@ -13,6 +20,7 @@ services:
     restart: unless-stopped
 
   solarsync-cache:
+    logging: *logging
     image: redis:7.4-alpine
     command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
     healthcheck:
@@ -23,6 +31,7 @@ services:
     restart: unless-stopped
 
   solarsync-db:
+    logging: *logging
     image: mysql:8.4
     environment:
       MYSQL_DATABASE: solarsync
@@ -40,6 +49,7 @@ services:
     restart: unless-stopped
 
   solarsync-backend:
+    logging: *logging
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -57,6 +67,9 @@ services:
       CACHE_ENABLED: ${CACHE_ENABLED:-true}
       METRICS_ENABLED: ${METRICS_ENABLED:-false}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:3000/api/v1/auth/google/callback}
       DB_HOST: solarsync-db
       DB_PORT: "3306"
       DB_NAME: solarsync
@@ -81,6 +94,7 @@ services:
     restart: unless-stopped
 
   solarsync-frontend:
+    logging: *logging
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -95,6 +109,15 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
       - NEXT_PUBLIC_ENABLE_ROLE_DEMO=${NEXT_PUBLIC_ENABLE_ROLE_DEMO:-false}
+    healthcheck:
+      test: ["CMD", "node", "-e", "Promise.all(['/login','/api/v1/auth/google/config'].map(p=>fetch('http://127.0.0.1:3000'+p))).then(rs=>{if(rs.some(r=>!r.ok))process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 25s
+    depends_on:
+      solarsync-backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

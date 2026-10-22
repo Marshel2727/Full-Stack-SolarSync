@@ -1,5 +1,6 @@
 'use client';
 
+import './portal.css';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -19,7 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   dashboard: {
-    title: 'Ringkasan Energi & Sistem',
+    title: 'Beranda Akun',
     subtitle: 'Pantau produksi surya, konsumsi daya, dan efisiensi inverter secara real-time.',
   },
   energy: {
@@ -93,7 +94,7 @@ export default function CustomerDashboardLayout({
   if (loading || !user) return <main className="mx-auto max-w-lg p-8"><h1 className="text-2xl font-bold">{loading ? 'Memeriksa sesi…' : 'Silakan masuk'}</h1>{!loading && <Link href="/login" className="mt-4 inline-block text-primary underline">Masuk untuk membuka dashboard</Link>}</main>;
 
   return (
-    <div className="min-h-[100dvh] bg-surface text-slateText flex">
+    <div className="customer-portal min-h-[100dvh] flex">
       <a href="#customer-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3">Lewati navigasi</a>
       {/* Desktop Persistent Sidebar */}
       <div className="hidden lg:block w-64 xl:w-72 shrink-0 h-[100dvh] sticky top-0 z-20">

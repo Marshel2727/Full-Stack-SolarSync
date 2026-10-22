@@ -8,7 +8,7 @@ def main():
     email = input("Email: ").strip()
     name = input("Nama: ").strip()
     role = input("Role (admin/customer): ").strip()
-    password = getpass("Password (minimal 12 karakter): ")
+    password = getpass("Password (15–1024 karakter): ")
     try:
         validate_user_input(email, name, role, password)
         if getpass("Ulangi password: ") != password:
@@ -17,7 +17,10 @@ def main():
             create_user(db, email, name, role, password)
     except ValueError as exc:
         raise SystemExit(str(exc)) from None
-    print("User dibuat. Hubungkan customer ke user_id melalui proses administrasi sebelum akses sistem.")
+    if role == "admin":
+        print("Admin berhasil dibuat. Masuk melalui /login?mode=admin menggunakan email dan password tersebut.")
+    else:
+        print("Pelanggan berhasil dibuat. Hubungkan akun Google melalui 'Hubungkan akun lama' pada halaman login.")
 
 
 if __name__ == "__main__":

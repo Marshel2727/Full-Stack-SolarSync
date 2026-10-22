@@ -12,6 +12,7 @@ import { RangeSlider } from '../../components/ui/RangeSlider';
 import { ProgressStepper } from '../../components/ui/ProgressStepper';
 import { useSolar } from '../../context/SolarContext';
 import { PropertyType, RoofOrientation, ShadingCondition } from '../../types';
+import { calculatorErrors, tariffAssumption } from '../../utils/calculator';
 import {
   Sun,
   Home,
@@ -31,6 +32,8 @@ export default function CalculatorPage() {
   const router = useRouter();
   const { calculatorInput, setCalculatorInput, runCalculation } = useSolar();
   const [currentStep, setCurrentStep] = useState(0);
+  const [showErrors, setShowErrors] = useState(false);
+  const errors = showErrors ? calculatorErrors(calculatorInput) : null;
 
   const steps = [
     { id: 'step-1', label: 'Tipe & Lokasi', description: 'Kategori bangunan & kota' },
@@ -75,6 +78,18 @@ export default function CalculatorPage() {
   ];
 
   const handleNext = () => {
+    const validation = calculatorErrors(calculatorInput);
+    const fields = [
+      ['city', 'propertyType'], ['monthlyBillIdr', 'plnPowerVa', 'monthlyKwh'],
+      ['roofAreaSqM', 'roofOrientation', 'shadingCondition'], ['targetCoveragePercent'],
+    ] as const;
+    const invalidStep = fields.findIndex((keys, index) => index <= currentStep && keys.some(key => validation[key]));
+    if (invalidStep !== -1) {
+      setCurrentStep(invalidStep);
+      setShowErrors(true);
+      return;
+    }
+    setShowErrors(false);
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -114,7 +129,7 @@ export default function CalculatorPage() {
           <ProgressStepper
             steps={steps}
             currentStep={currentStep}
-            onStepClick={(step) => setCurrentStep(step)}
+            onStepClick={(step) => { if (step <= currentStep) { setCurrentStep(step); setShowErrors(false); } }}
           />
         </div>
 
@@ -138,7 +153,8 @@ export default function CalculatorPage() {
                       <button
                         key={p.type}
                         type="button"
-                        onClick={() => setCalculatorInput({ propertyType: p.type })}
+                        aria-pressed={isSelected}
+                        onClick={() => setCalculatorInput({ propertyType: p.type, monthlyKwh: 0 })}
                         className={`flex flex-col items-center text-center p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                           isSelected
                             ? 'border-primary bg-primary/5 text-primary font-bold shadow-sm'
@@ -161,7 +177,7 @@ export default function CalculatorPage() {
                 value={calculatorInput.city}
                 onChange={(e) => setCalculatorInput({ city: e.target.value })}
                 options={cityOptions}
-                helperText="Lokasi menentukan rata-rata jam puncak radiasi matahari harian (Peak Sun Hours)."
+                helperText="Jam matahari per kota adalah asumsi simulasi awal, bukan pengukuran cuaca lokasi."
               />
             </div>
           )}
@@ -182,11 +198,12 @@ export default function CalculatorPage() {
                 value={calculatorInput.monthlyBillIdr || ''}
                 onChange={(e) => {
                   const val = Number(e.target.value);
-                  const estKwh = Math.round(val / 1444.7);
-                  setCalculatorInput({ monthlyBillIdr: val, monthlyKwh: estKwh });
+                  setCalculatorInput({ monthlyBillIdr: val, monthlyKwh: 0 });
                 }}
                 placeholder="Contoh: 1500000"
-                helperText={`Estimasi konsumsi: ~${calculatorInput.monthlyKwh} kWh / bulan`}
+                min={1}
+                errorText={errors?.monthlyBillIdr}
+                helperText={`Estimasi konsumsi: ~${Math.round(calculatorInput.monthlyBillIdr / tariffAssumption(calculatorInput))} kWh/bulan; tarif asumsi simulasi.`}
                 required
               />
 
@@ -198,8 +215,7 @@ export default function CalculatorPage() {
                     key={preset}
                     type="button"
                     onClick={() => {
-                      const estKwh = Math.round(preset / 1444.7);
-                      setCalculatorInput({ monthlyBillIdr: preset, monthlyKwh: estKwh });
+                      setCalculatorInput({ monthlyBillIdr: preset, monthlyKwh: 0 });
                     }}
                     className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                       calculatorInput.monthlyBillIdr === preset
@@ -216,7 +232,7 @@ export default function CalculatorPage() {
               <Select
                 label="Daya Listrik Terpasang PLN (VA)"
                 value={calculatorInput.plnPowerVa}
-                onChange={(e) => setCalculatorInput({ plnPowerVa: Number(e.target.value) })}
+                onChange={(e) => setCalculatorInput({ plnPowerVa: Number(e.target.value), monthlyKwh: 0 })}
                 options={plnPowerOptions}
                 helperText="Daya tertera pada meteran atau struk tagihan listrik rumah Anda."
               />
@@ -255,10 +271,11 @@ export default function CalculatorPage() {
                   value={calculatorInput.roofOrientation || 'optimal'}
                   onChange={(e) => setCalculatorInput({ roofOrientation: e.target.value as RoofOrientation })}
                   options={[
-                    { value: 'optimal', label: 'Utara / Selatan (Sangat Optimal)' },
+                    { value: 'optimal', label: 'Orientasi optimal / rangka dapat diatur' },
+                    { value: 'utara', label: 'Utara' },
+                    { value: 'selatan', label: 'Selatan' },
                     { value: 'timur', label: 'Timur (Matahari Pagi)' },
                     { value: 'barat', label: 'Barat (Matahari Siang)' },
-                    { value: 'dak_datar', label: 'Dak Beton Datar (Bebas Atur Rangka)' },
                   ]}
                 />
 
@@ -292,7 +309,7 @@ export default function CalculatorPage() {
                 step={5}
                 unit="%"
                 onChange={(val) => setCalculatorInput({ targetCoveragePercent: val })}
-                helperText="Rekomendasi terbaik untuk sistem On-Grid adalah 70% - 90% untuk efisiensi investasi maksimal."
+                helperText="Target cakupan energi adalah simulasi; penghematan nyata mengikuti pemakaian langsung, kondisi lokasi, dan tarif."
                 markers={[
                   { value: 50, label: '50% (Hemat Minimal)' },
                   { value: 80, label: '80% (Paling Optimal)' },
@@ -317,6 +334,7 @@ export default function CalculatorPage() {
           )}
 
           {/* Navigation Bottom Actions */}
+          {errors && Object.values(errors).some(Boolean) && <p role="alert" className="mt-5 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{Object.values(errors).find(Boolean)}</p>}
           <div className="pt-8 mt-8 border-t border-slate-100 flex items-center justify-between gap-3">
             {currentStep > 0 ? (
               <Button

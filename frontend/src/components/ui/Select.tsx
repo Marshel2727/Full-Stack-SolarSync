@@ -25,7 +25,14 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({
   required,
   ...props
 }, ref) => {
-  const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  const fallbackId = React.useId();
+  const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : fallbackId);
+
+  const describedBy = errorText
+    ? `${selectId}-error`
+    : helperText
+    ? `${selectId}-helper`
+    : undefined;
 
   return (
     <div className="w-full space-y-1.5">
@@ -41,6 +48,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({
           id={selectId}
           required={required}
           aria-invalid={errorText ? true : undefined}
+          aria-describedby={describedBy}
           className={`ui-field-control min-w-0 w-full min-h-11 rounded-xl bg-transparent px-3.5 py-2.5 text-base sm:text-sm text-slateText focus:outline-none disabled:bg-slate-50 disabled:text-slate-400 cursor-pointer appearance-none ${className}`}
           {...props}
         >
@@ -51,13 +59,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({
           ))}
         </select>
         <div className="shrink-0 pr-3.5 pointer-events-none text-slateText-muted">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </div>
-      {errorText && <p className="text-xs font-medium text-rose-600">{errorText}</p>}
-      {helperText && !errorText && <p className="text-xs text-slateText-muted">{helperText}</p>}
+      {errorText && <p id={`${selectId}-error`} role="alert" className="text-xs font-medium text-rose-600">{errorText}</p>}
+      {helperText && !errorText && <p id={`${selectId}-helper`} className="text-xs text-slateText-muted">{helperText}</p>}
     </div>
   );
 });

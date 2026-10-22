@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { ArticleContent } from '../../../components/ui/ArticleContent';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Navbar } from '../../../components/shared/Navbar';
@@ -25,9 +27,16 @@ import {
 export default function ArticleDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
-  const { getArticleBySlug, articles, showToast } = useSolar();
+  const { getArticleBySlug, articles, showToast, dataState } = useSolar();
 
   const article = getArticleBySlug(slug);
+
+  if (!article && (dataState.articles.isPending || dataState.articles.isError)) {
+    const state = dataState.articles;
+    return <div className="min-h-screen bg-surface"><Navbar /><main className="mx-auto max-w-4xl px-4 py-14">
+      {state.isPending ? <SkeletonLoader count={4} className="h-24 w-full" /> : <div role="alert" className="rounded-2xl border bg-white p-8 text-center"><h1 className="text-xl font-bold">Data belum dapat dimuat</h1><p className="my-4 text-sm text-slate-500">Periksa koneksi lalu coba lagi.</p><Button onClick={() => void state.refetch()}>Coba lagi</Button></div>}
+    </main><Footer /></div>;
+  }
 
   if (!article) {
     return (
@@ -48,6 +57,18 @@ export default function ArticleDetailPage() {
   const relatedArticles = articles.filter((a) => a.id !== article.id).slice(0, 2);
 
   const handleShare = async () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: article.title,
+          text: article.summary,
+          url: window.location.href,
+        });
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+      }
+    }
     try {
       if (!navigator.clipboard) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText(window.location.href);
@@ -106,6 +127,7 @@ export default function ArticleDetailPage() {
 
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={handleShare}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 font-semibold transition-colors"
               >
@@ -118,9 +140,7 @@ export default function ArticleDetailPage() {
 
         {/* Article Body Content */}
         <Card variant="default" padding="lg" className="prose max-w-none text-slate-700 leading-relaxed space-y-6">
-          <div className="whitespace-pre-line text-sm sm:text-base leading-loose font-normal">
-            {article.content}
-          </div>
+          <ArticleContent content={article.content} />
 
           {/* Tags */}
           <div className="pt-6 border-t border-slate-100 flex flex-wrap gap-2 items-center text-xs">

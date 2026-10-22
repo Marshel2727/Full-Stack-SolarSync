@@ -1,5 +1,7 @@
 'use client';
 
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
+import { EmptyState as CatalogEmpty } from '../../components/ui/EmptyState';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Navbar } from '../../components/shared/Navbar';
@@ -23,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export default function PackagesPage() {
-  const { packages } = useSolar();
+  const { packages, dataState } = useSolar();
   const [selectedSegment, setSelectedSegment] = useState<string>('all');
 
   const segmentTabs = [
@@ -59,7 +61,7 @@ export default function PackagesPage() {
 
         {/* Filter Tabs */}
         <div className="flex justify-center">
-          <Tabs
+          <Tabs panelId="packages-results"
             tabs={segmentTabs}
             activeTab={selectedSegment}
             onChange={(tabId) => setSelectedSegment(tabId)}
@@ -68,14 +70,18 @@ export default function PackagesPage() {
         </div>
 
         {/* Packages Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {dataState.packages.isError && <CatalogEmpty title="Data belum dapat dimuat" description="Periksa koneksi lalu coba lagi. Data sebelumnya tetap ditampilkan jika tersedia." actionText="Coba lagi" onAction={() => void dataState.packages.refetch()} />}
+          {dataState.packages.isPending && (<div className="grid gap-6 md:grid-cols-3">{[1, 2, 3].map(index => <SkeletonLoader key={index} className="h-96" />)}</div>)}
+          {!dataState.packages.isPending && !dataState.packages.isError && filteredPackages.length === 0 && <CatalogEmpty title="Belum ada paket" description="Pilih segmen lain atau kunjungi kembali setelah katalog diperbarui." />}
+          <div role="tabpanel" id="packages-results" aria-labelledby={`packages-results-tab-${selectedSegment}`} tabIndex={0} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredPackages.map((pkg) => (
             <Card
               key={pkg.id}
               variant={pkg.isPopular ? 'elevated' : 'default'}
               padding="lg"
-              className={`flex flex-col justify-between relative transition-all duration-300 ${
-                pkg.isPopular ? 'ring-2 ring-solar shadow-ambient' : 'hover:shadow-ambient'
+              hoverEffect
+              className={`flex flex-col justify-between relative ${
+                pkg.isPopular ? 'ring-2 ring-solar shadow-ambient' : ''
               }`}
             >
               {pkg.isPopular && (

@@ -51,6 +51,8 @@ export interface CalculatorResult {
     tariffPerKwh: number;
     emissionFactor: number;
     systemEfficiency: number;
+    orientationFactor: number;
+    shadingFactor: number;
   };
 }
 
@@ -107,6 +109,7 @@ export interface InstallationRequest {
   roofAreaSqM: number;
   calculatorResult?: Partial<CalculatorResult>;
   selectedPackageSlug?: string;
+  accountUserId?: string | null;
   roofPhotoUrl?: string;
   electricityBillPhotoUrl?: string;
   documents?: { id: number; name: string; type: string; sizeBytes: number; downloadUrl: string }[];

@@ -37,7 +37,7 @@ export function useCatalogWrite() {
 }
 
 export type SystemInfo = { id: string; name: string; capacityKwp: number };
-export type EnergyDay = { local_date: string; production_kwh: number | null; consumption_kwh: number | null; savings_idr: number | null; co2_avoided_kg: number | null };
+export type EnergyDay = { local_date: string; production_kwh: number | null; consumption_kwh: number | null; savings_idr: number | null; co2_avoided_kg: number | null; calculation_basis_json?: { demo?: boolean } };
 export type DashboardData = {
   localDate: string; timezone: string; summary: EnergyDay | null;
   devices: { id: string; name: string; status: string; lastSampleAt: string | null; expectedIntervalSeconds: number }[];

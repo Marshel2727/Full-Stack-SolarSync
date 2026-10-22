@@ -1,0 +1,53 @@
+name: Quality checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run lint && npm run typecheck && npm test
+        working-directory: frontend
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: frontend
+      - name: Configure disposable local environment
+        shell: bash
+        run: |
+          printf 'MYSQL_PASSWORD=%s\nMYSQL_ROOT_PASSWORD=%s\n' "$(openssl rand -hex 24)" "$(openssl rand -hex 24)" > .env
+      - run: docker compose build solarsync-backend solarsync-frontend
+      - run: docker compose up -d --wait solarsync-db solarsync-cache solarsync-auth-store
+      - run: docker compose run --rm --no-deps solarsync-backend python -m alembic upgrade head
+      - run: docker compose run --rm --no-deps solarsync-backend python -m unittest discover -s tests -v
+      - run: docker compose up -d --wait solarsync-backend solarsync-frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run test:e2e
+        working-directory: frontend
+      - name: Backup and isolated restore
+        shell: pwsh
+        run: |
+          ./ops/backup.ps1 -Destination ./backups/ci
+          ./ops/restore.ps1 -BackupPath ./backups/ci -Project solarsync-restore-ci
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-report
+          path: frontend/playwright-report
+          retention-days: 5
+      - name: Clean disposable services
+        if: always()
+        shell: bash
+        run: |
+          docker compose -p solarsync-restore-ci down -v
+          docker compose down -v

@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     db_user: str = "solarsync_app"
     db_password: SecretStr
     cors_origins: list[str] = ["http://localhost:3000"]
+    google_client_id: str = ""
+    google_client_secret: SecretStr = SecretStr("")
+    google_redirect_uri: str = "http://localhost:3000/api/v1/auth/google/callback"
 
     @model_validator(mode="after")
     def validate_auth_settings(self):
@@ -57,7 +60,23 @@ class Settings(BaseSettings):
             cache, auth = urlsplit(self.redis_url), urlsplit(self.auth_redis_url)
             if (cache.hostname, cache.port or 6379) == (auth.hostname, auth.port or 6379):
                 raise ValueError("AUTH_REDIS_URL must use a separate noeviction Redis server")
+        if bool(self.google_client_id) != bool(self.google_client_secret.get_secret_value()):
+            raise ValueError("Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET together")
+        redirect = urlsplit(self.google_redirect_uri)
+        origin = f"{redirect.scheme}://{redirect.netloc}"
+        if self.google_enabled and (origin not in self.cors_origins or redirect.username or redirect.password
+                or redirect.path != "/api/v1/auth/google/callback" or redirect.query or redirect.fragment):
+            raise ValueError("GOOGLE_REDIRECT_URI must use an allowed frontend origin and /api/v1/auth/google/callback")
         return self
+
+    @property
+    def google_enabled(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret.get_secret_value())
+
+    @property
+    def google_frontend_origin(self) -> str:
+        parsed = urlsplit(self.google_redirect_uri)
+        return f"{parsed.scheme}://{parsed.netloc}"
 
     @property
     def session_cookie_name(self) -> str:

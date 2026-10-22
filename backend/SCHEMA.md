@@ -31,6 +31,8 @@ Kolom opsional ditandai `?`. Semua ID BIGINT dikirim sebagai string oleh API nan
 
 ### users
 
+`google_subject?` adalah `String(255)` dengan collation `ascii_bin` dan unique constraint, ditambahkan oleh migrasi `0003_google_identity`. Akun admin dan akun lama boleh bernilai NULL. Identitas ini tidak mengubah relasi pelanggan/pengajuan yang sudah ada.
+
 - `id`: `BIGINT(unsigned=True)` — primary key
 - `name`: `String(255)`
 - `email?`: `String(254)`

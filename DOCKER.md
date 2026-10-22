@@ -1,107 +1,92 @@
-# Menjalankan SolarSync dengan Docker (lokal)
+# Menjalankan dan memelihara SolarSync
 
-**Pembaruan API/cache:** untuk versi kode terbaru, ikuti [CACHE_SETUP.md](CACHE_SETUP.md) terlebih dahulu. Ada dependency frontend baru, Redis, login server, dan migrasi 0002. Panduan lama di bawah menjelaskan fondasi awal dan tidak lagi menggambarkan status integrasi terbaru.
+Untuk frontend Vercel dan backend VPS, ikuti [DEPLOY_VPS_VERCEL.md](DEPLOY_VPS_VERCEL.md). Bagian produksi HTTPS di bawah menggunakan alternatif frontend dan backend bersama pada VPS.
 
-Prasyarat: Docker Desktop sudah berjalan dalam mode Linux containers, dengan Docker Compose v2. Tidak perlu memasang Python, Node.js, atau MySQL di Windows untuk alur ini.
+## Lokal
 
-Tiga service: `solarsync-db` (MySQL 8.4), `solarsync-backend` (FastAPI), dan `solarsync-frontend` (frontend yang sudah ada). Database tidak membuka port ke Windows; backend mengakses host `solarsync-db:3306`. Data tersimpan di named volume `solarsync_mysql_data` (dengan prefix proyek dari Compose).
-
-## 1. Konfigurasi pertama — PowerShell
-
-```powershell
-cd 'C:\PROJECT WEB\fullstcukUNMUL'
-if (!(Test-Path .env)) { Copy-Item .env.example .env }
-notepad .env
-```
-
-Pastikan tiga variabel berikut ada. Jika `.env` sebelumnya sudah ada, tambahkan dua variabel MySQL tanpa menghapus pengaturan lain. Ganti kedua password contoh dengan password kuat yang berbeda, lalu simpan:
-
-```dotenv
-NEXT_PUBLIC_ENABLE_ROLE_DEMO=false
-MYSQL_PASSWORD='GANTI_PASSWORD_APLIKASI'
-MYSQL_ROOT_PASSWORD='GANTI_PASSWORD_ROOT'
-```
-
-Compose menggunakan `.env` di root proyek, bukan `backend/.env`. File rahasia tidak dimasukkan ke image backend dan diabaikan Git. Jangan membagikan output konfigurasi lengkap yang berisi password. Konfigurasi ini untuk pengembangan lokal, bukan hardening produksi.
-
-## 2. Validasi konfigurasi dan build
-
-Jalankan setiap langkah berurutan; berhenti jika ada error.
+Gunakan Docker Desktop dengan Linux containers dan Docker Compose 2.24.4 atau lebih baru. Jalankan perintah dari root proyek. Pada instalasi pertama, salin `.env.example` ke `.env`, lalu ganti kedua password database. Jangan menimpa `.env` yang sudah dipakai.
 
 ```powershell
 docker compose config --quiet
+docker compose build solarsync-backend solarsync-frontend
+docker compose up -d --wait solarsync-db solarsync-cache solarsync-auth-store
+docker compose run --rm --no-deps solarsync-backend python -m alembic upgrade head
+docker compose up -d --wait solarsync-backend solarsync-frontend
 ```
 
+Frontend tersedia di `http://localhost:3000`. Backend lokal hanya dibind ke `127.0.0.1:8000`; database dan Redis tidak dipublikasikan. Frontend memakai Node.js 24, Next.js 16, dan React 19. Backend memakai Python 3.12 serta dependency terkunci.
+
+Buat akun admin secara interaktif:
+
 ```powershell
-docker compose build
+docker compose exec solarsync-backend python -m app.create_user
 ```
 
-## 3. Pengujian offline dalam container
+Isi role `admin` dan password 15–1024 karakter. Password tidak tampil saat diketik. Admin masuk melalui `/login?mode=admin`; pelanggan memakai Google yang dikonfigurasi sesuai [AUTH_PRODUCTION.md](AUTH_PRODUCTION.md).
+
+## Memeriksa layanan
 
 ```powershell
+docker compose ps
+docker compose logs --tail=100 solarsync-backend solarsync-frontend
 docker compose run --rm --no-deps solarsync-backend python -m unittest discover -s tests -v
 ```
 
-Lanjut setelah hasil `OK`. Test ini tidak menghubungi database.
+Semua container mempunyai healthcheck dan log berotasi maksimal tiga berkas berukuran 10 MB per container. Backend baru siap setelah skema database dan Redis autentikasi siap. Frontend menunggu backend sehat saat startup.
 
-## 4. Jalankan database dan migrasi
+Saat kode berubah, build ulang image terkait dan jalankan `up -d --wait`; lakukan `alembic upgrade head` jika ada migrasi baru. Perubahan `.env` diterapkan dengan `up`, bukan hanya `restart`.
 
-```powershell
-docker compose up -d --wait solarsync-db
-```
+## Backup yang konsisten
 
-MySQL membuat database dan akun aplikasi saat volume pertama kali diinisialisasi; tidak perlu menjalankan CREATE USER manual. Mengubah password `.env` setelah inisialisasi tidak otomatis mengganti password akun dalam database. Jangan menghapus volume untuk mengatasi masalah kredensial.
-
-Terapkan migrasi pada database baru khusus SolarSync:
+Skrip PowerShell berikut menyimpan SQL database, seluruh upload, dan manifest checksum SHA-256 dalam folder baru yang diabaikan Git. Backend dihentikan sebentar agar SQL dan file berasal dari keadaan yang konsisten, lalu otomatis dinyalakan kembali. Lakukan saat trafik rendah. Jangan menjalankan migrasi atau proses tulis lain selama backup.
 
 ```powershell
-docker compose run --rm solarsync-backend python -m alembic upgrade head
+./ops/backup.ps1
 ```
 
-Setelah berhasil:
+Tujuan khusus dapat diberikan dengan `-Destination ./backups/nama-baru`. Untuk konfigurasi produksi, gunakan `-EnvFile .env.production -Production`. Backup berisi data privat dan sesi yang telah di-hash; simpan pada media privat, terenkripsi, dan terpisah dari server. `.env` serta Client Secret Google tidak disertakan. Volume Docker sendiri bukan backup.
+
+## Uji pemulihan tanpa menimpa data utama
+
+Ganti path berikut dengan folder backup yang dihasilkan:
 
 ```powershell
-docker compose run --rm solarsync-backend python -m alembic current
-docker compose run --rm solarsync-backend python -m alembic check
+./ops/restore.ps1 -BackupPath ./backups/nama-backup
 ```
 
-Migrasi membuat 33 tabel aplikasi dan tabel Alembic. Migrasi tidak dijalankan otomatis saat server mulai. Jika migrasi gagal, berhenti dan periksa error; DDL MySQL dapat meninggalkan perubahan parsial. Jangan menjalankan `stamp` untuk melewati kegagalan.
+Skrip memverifikasi checksum, membuat project Docker baru berawalan `solarsync-restore-`, mengimpor SQL, memulihkan upload ke volume kosong, menjalankan migrasi, lalu memeriksa kesiapan layanan dan jumlah data. Target yang sudah memiliki container/volume ditolak. Path keluar direktori dan symlink dalam arsip ditolak. Project utama tidak disentuh.
 
-## 5. Jalankan seluruh aplikasi
+Container/volume pemulihan dipertahankan untuk pemeriksaan. Skrip mencetak perintah penghapusan yang hanya menunjuk project uji tersebut. Jangan menghapus volume project utama. Untuk pemulihan bencana, periksa hasil project pemulihan sebelum mengarahkan aplikasi ke data yang telah dipulihkan.
+
+## Produksi dengan HTTPS
+
+Salin `.env.production.example` menjadi `.env.production` dan isi `PUBLIC_DOMAIN`, password database, OAuth client produksi, serta path sertifikat TLS dan private key yang valid. `PUBLIC_DOMAIN` hanya hostname, tanpa `https://`, port atau path. Sertifikat diterbitkan dan diperpanjang oleh pengelola/layanan hosting; repo tidak mengurus penerbitan sertifikat otomatis. Daftarkan callback `https://DOMAIN/api/v1/auth/google/callback` di Google Cloud.
 
 ```powershell
-docker compose up -d --wait
-docker compose ps
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml config --quiet
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml build
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml up -d --wait solarsync-db solarsync-cache solarsync-auth-store
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml run --rm --no-deps solarsync-backend python -m alembic upgrade head
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml up -d --wait
 ```
 
-- Frontend: http://localhost:3000
-- Swagger backend: http://localhost:8000/docs
-- Kesiapan database: http://localhost:8000/health/ready
+Overlay produksi menutup port langsung frontend/backend. Nginx menjadi satu-satunya pintu publik pada 80/443, mengalihkan HTTP ke HTTPS, membatasi ukuran request, dan menerapkan limiter login per alamat IP. Header alamat IP dari pemanggil ditimpa. Pengaturan ini mengasumsikan Nginx menerima trafik publik langsung; bila ada CDN/load balancer, atur daftar proxy tepercaya dan penanganan IP aslinya sebelum mengaktifkan trafik.
 
-Backend menggunakan readiness sebagai healthcheck, sehingga belum sehat jika migrasi belum terpasang. Frontend masih menggunakan mock/localStorage; Docker tidak otomatis mengintegrasikan API bisnis yang belum dibuat.
+Sesi memakai cookie Secure/HttpOnly, origin HTTPS eksplisit, dan Google Client Secret hanya pada backend. Log Nginx menghilangkan query string agar kode OAuth tidak tercatat. Perubahan file sertifikat memerlukan reload Nginx. Domain/DNS, firewall server, sertifikat publik, dan kredensial server harus disiapkan sesuai hosting; konfigurasi lokal yang berhasil belum membuktikan deployment publik.
 
-## Log dan berhenti
+## Tes otomatis
+
+Workflow `.github/workflows/quality.yml` memeriksa lint, tipe TypeScript, tes unit, build Docker, migrasi, alur browser, serta backup/pemulihan terisolasi. Workflow menggunakan kredensial dan akun uji sementara, tanpa Google Client Secret asli.
+
+Untuk menjalankan tes frontend sendiri, gunakan Node.js 24 dari folder `frontend`:
 
 ```powershell
-docker compose logs --tail=100 solarsync-backend solarsync-db
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npx playwright install chromium
+npm run test:e2e
 ```
 
-Hentikan container tanpa menghapus data:
-
-```powershell
-docker compose down
-```
-
-Jangan tambahkan `-v` karena akan menghapus volume beserta database. Volume bukan pengganti backup.
-
-Untuk menjalankan ulang setelah setup berhasil:
-
-```powershell
-docker compose up -d --wait
-```
-
-Jika kode berubah, build ulang dengan `docker compose build`, terapkan migrasi baru bila ada, kemudian jalankan kembali. Tidak ada bind mount source code atau auto-reload pada konfigurasi ini. Port 3000/8000 harus tersedia.
-
-## Status verifikasi
-
-Konfigurasi disiapkan melalui edit file; build, pengujian, migrasi, dan startup Docker belum dijalankan oleh asisten sesuai permintaan pengguna.
+Tes browser membutuhkan stack Docker lokal yang sudah berjalan dan image backend terkini. Akun dan pengajuan uji dibuat serta dibersihkan berdasarkan ID/email khusus tes; kode fixture menolak environment produksi. Selesaikan tes sebelum backup agar snapshot tidak menyertakan akun uji. Jika proses tes terputus, jalankan `npm run test:e2e:cleanup` sebelum mengulang. Login Google eksternal tidak diotomatisasi; pengujian token Google ada pada tes backend, dan satu login manusia tetap diperlukan saat menyiapkan OAuth client/domain baru.

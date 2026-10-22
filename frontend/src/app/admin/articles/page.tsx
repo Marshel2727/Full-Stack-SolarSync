@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -20,6 +20,18 @@ export default function AdminArticlesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const saving = useRef(false);
+  const [isPublished, setIsPublished] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Article | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const confirmDelete = async () => {
+    if (!pendingDelete || isDeleting) return;
+    setIsDeleting(true);
+    try { if (await deleteArticle(pendingDelete.id)) setPendingDelete(null); }
+    finally { setIsDeleting(false); }
+  };
+
   // Form State
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
@@ -29,6 +41,7 @@ export default function AdminArticlesPage() {
   const [tags, setTags] = useState('PLTS, Edukasi, Energi');
 
   const openAddModal = () => {
+    setIsPublished(false);
     setEditingArticleId(null);
     setTitle('');
     setSummary('');
@@ -40,6 +53,7 @@ export default function AdminArticlesPage() {
   };
 
   const openEditModal = (art: Article) => {
+    setIsPublished(art.isPublished);
     setEditingArticleId(art.id);
     setTitle(art.title);
     setSummary(art.summary);
@@ -52,7 +66,9 @@ export default function AdminArticlesPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) return;
+    if (saving.current || !title.trim()) return;
+    saving.current = true; setIsSaving(true);
+    try {
 
     const parsedTags = tags.split(',').map((t) => t.trim()).filter(Boolean);
 
@@ -64,6 +80,7 @@ export default function AdminArticlesPage() {
         category,
         author,
         tags: parsedTags,
+        isPublished,
       });
       if (!saved) return;
     } else {
@@ -78,12 +95,14 @@ export default function AdminArticlesPage() {
         readTimeMinutes: 5,
         coverImage: '',
         tags: parsedTags,
-        isPublished: true,
+        isPublished,
+
       });
       if (!saved) return;
     }
 
     setIsModalOpen(false);
+    } finally { saving.current = false; setIsSaving(false); }
   };
 
   return (
@@ -140,7 +159,7 @@ export default function AdminArticlesPage() {
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => deleteArticle(art.id)}
+                        onClick={() => setPendingDelete(art)}
                         className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600"
                         title="Hapus Artikel" aria-label={`Hapus artikel ${art.title}`}
                       >
@@ -159,11 +178,11 @@ export default function AdminArticlesPage() {
       {/* Add / Edit Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => { if (!saving.current) setIsModalOpen(false); }}
         title={editingArticleId ? 'Ubah Konten Artikel' : 'Tulis Artikel Edukasi Baru'}
         maxWidth="lg"
       >
-        <form onSubmit={handleSave} className="space-y-4 text-xs">
+        <form onSubmit={handleSave} className="space-y-4 text-xs"><fieldset disabled={isSaving} className="space-y-4">
           <Input
             label="Judul Artikel"
             value={title}
@@ -221,15 +240,21 @@ export default function AdminArticlesPage() {
             placeholder="PLTS, Energi Bersih, Atap Rumah"
           />
 
+          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={isPublished} onChange={event => setIsPublished(event.target.checked)} />Publikasikan di Knowledge Center</label>
+          <p className="text-xs text-slate-500">Jika tidak dicentang, artikel disimpan sebagai draf dan tidak tampil untuk pengunjung.</p>
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
             <Button variant="ghost" size="sm" type="button" onClick={() => setIsModalOpen(false)}>
               Batal
             </Button>
-            <Button variant="primary" size="md" type="submit">
-              {editingArticleId ? 'Simpan Perubahan' : 'Publikasikan Artikel'}
+            <Button variant="primary" size="md" type="submit" isLoading={isSaving}>
+              {editingArticleId ? 'Simpan Perubahan' : isPublished ? 'Publikasikan Artikel' : 'Simpan Draf'}
             </Button>
           </div>
-        </form>
+        </fieldset></form>
+      </Modal>
+      <Modal isOpen={!!pendingDelete} onClose={() => { if (!isDeleting) setPendingDelete(null); }} title="Hapus artikel?">
+        <p className="text-sm leading-7">Artikel <strong>{pendingDelete?.title}</strong> akan dihapus dari daftar aktif dan halaman publik.</p>
+        <div className="mt-6 flex justify-end gap-3"><Button variant="ghost" disabled={isDeleting} onClick={() => setPendingDelete(null)}>Batal</Button><Button variant="danger" isLoading={isDeleting} onClick={confirmDelete}>Hapus artikel</Button></div>
       </Modal>
     </div>
   );

@@ -41,8 +41,9 @@ export default function AdminRequestsPage() {
 
       {/* Filters Bar */}
       <Card variant="default" padding="md">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <search className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input
+            type="search"
             label="Cari pengajuan"
             placeholder="Cari No. Tiket, Nama, No HP, Kota..."
             value={search}
@@ -80,7 +81,7 @@ export default function AdminRequestsPage() {
               { value: 'school', label: 'Sekolah / Fasilitas Umum' },
             ]}
           />
-        </div>
+        </search>
       </Card>
 
       {/* Requests Table */}

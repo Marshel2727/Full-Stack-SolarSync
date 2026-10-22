@@ -128,9 +128,9 @@ export const ChartWrapper: React.FC<ChartWrapperProps> = ({
       )}
       <div style={{ height: `${height}px` }} className="relative w-full">
         {type === 'bar' ? (
-          <Bar data={data as ChartData<'bar'>} options={mergedOptions as ChartOptions<'bar'>} />
+          <Bar role="img" aria-label={title || 'Grafik energi'} data={data as ChartData<'bar'>} options={mergedOptions as ChartOptions<'bar'>} />
         ) : (
-          <Line data={data as ChartData<'line'>} options={mergedOptions as ChartOptions<'line'>} />
+          <Line role="img" aria-label={title || 'Grafik energi'} data={data as ChartData<'line'>} options={mergedOptions as ChartOptions<'line'>} />
         )}
       </div>
     </div>
