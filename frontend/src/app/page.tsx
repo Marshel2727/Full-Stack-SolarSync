@@ -1,8 +1,10 @@
 'use client';
+import { SkeletonLoader } from '../components/ui/SkeletonLoader';
+import { EmptyState as CatalogEmpty } from '../components/ui/EmptyState';
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { Navbar } from '../components/shared/Navbar';
 import { Footer } from '../components/shared/Footer';
 import { SolarSyncHero } from '../components/shared/SolarSyncHero';
@@ -33,7 +35,7 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
-  const { packages, faqs } = useSolar();
+  const { packages, faqs, dataState } = useSolar();
 
   const featuredPackages = packages.slice(0, 3);
   const featuredFaqs = faqs.slice(0, 4).map((f) => ({
@@ -184,12 +186,16 @@ export default function LandingPage() {
             </Link>
           </div>
 
+          {dataState.packages.isError && <CatalogEmpty title="Data belum dapat dimuat" description="Periksa koneksi lalu coba lagi. Data sebelumnya tetap ditampilkan jika tersedia." actionText="Coba lagi" onAction={() => void dataState.packages.refetch()} />}
+          {dataState.packages.isPending && (<div className="grid gap-6 md:grid-cols-3">{[1, 2, 3].map(index => <SkeletonLoader key={index} className="h-96" />)}</div>)}
+          {!dataState.packages.isPending && !dataState.packages.isError && featuredPackages.length === 0 && <CatalogEmpty title="Belum ada paket" description="Pilih segmen lain atau kunjungi kembali setelah katalog diperbarui." />}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {featuredPackages.map((pkg) => (
               <Card
                 key={pkg.id}
                 variant={pkg.isPopular ? 'elevated' : 'default'}
                 padding="lg"
+                hoverEffect
                 className={`flex flex-col justify-between relative ${
                   pkg.isPopular ? 'ring-2 ring-solar shadow-ambient' : ''
                 }`}
@@ -314,7 +320,11 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <Accordion items={featuredFaqs} defaultOpenId="faq-1" />
+          {dataState.faqs.isPending ? (
+            <SkeletonLoader count={4} className="h-16 w-full" />
+          ) : (
+            <Accordion items={featuredFaqs} defaultOpenId="faq-1" />
+          )}
 
           <div className="text-center mt-8">
             <Link href="/faq" className="text-sm font-bold text-primary hover:underline inline-flex items-center gap-1.5">

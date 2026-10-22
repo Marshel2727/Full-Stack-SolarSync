@@ -1,0 +1,74 @@
+# OAuth codes/state are query parameters: log only $uri, never $request_uri.
+log_format solarsync '$remote_addr [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent';
+access_log /var/log/nginx/access.log solarsync;
+
+map "$request_method:$uri" $auth_limit_key {
+    default "";
+    ~^POST:/api/v1/auth/(login|register|google/start|google/link)$ $binary_remote_addr;
+}
+limit_req_zone $auth_limit_key zone=auth_per_ip:10m rate=10r/m;
+
+server {
+    listen 8080;
+    location = /health { access_log off; return 200 "ok\n"; }
+    location / { return 404; }
+}
+
+server {
+    listen 80;
+    server_name ${PUBLIC_DOMAIN};
+    if ($host != "${PUBLIC_DOMAIN}") { return 444; }
+    return 308 https://${PUBLIC_DOMAIN}$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${PUBLIC_DOMAIN};
+    if ($host != "${PUBLIC_DOMAIN}") { return 444; }
+    ssl_certificate /etc/nginx/tls/fullchain.pem;
+    ssl_certificate_key /etc/nginx/tls/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_tickets off;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $backend http://solarsync-backend:8000;
+    set $frontend http://solarsync-frontend:3000;
+    client_max_body_size 12m;
+    client_body_timeout 20s;
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 35s;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    # Replace untrusted incoming forwarding headers at the public boundary.
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header Connection "";
+
+    # Nginx error messages can contain the original request line. For the OAuth
+    # callback, rely on the sanitized access status and backend event logs.
+    location = /api/v1/auth/google/callback {
+        error_log /dev/null crit;
+        proxy_pass $backend;
+    }
+    location /api/v1/auth/ {
+        client_max_body_size 16k;
+        limit_req zone=auth_per_ip burst=5 nodelay;
+        limit_req_status 429;
+        error_page 429 = @auth_limited;
+        proxy_pass $backend;
+    }
+    location @auth_limited {
+        default_type application/json;
+        add_header Strict-Transport-Security "max-age=31536000" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header Retry-After 60 always;
+        add_header Cache-Control no-store always;
+        return 429 '{"detail":"Terlalu banyak percobaan login. Coba lagi dalam satu menit."}';
+    }
+    location /api/v1/ { proxy_pass $backend; }
+    location / { proxy_pass $frontend; }
+}

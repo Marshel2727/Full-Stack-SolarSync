@@ -13,3 +13,12 @@ class LoginInput(BaseModel):
         if not value:
             raise ValueError("Identifier is required")
         return value
+
+
+class GoogleStartInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)
+    next: str = Field(default="/dashboard", max_length=2048)
+
+
+class GoogleLinkInput(LoginInput):
+    next: str = Field(default="/dashboard", max_length=2048)

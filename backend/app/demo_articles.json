@@ -1,0 +1,167 @@
+[
+  {
+    "slug": "mengenal-plts-atap-dari-cahaya-menjadi-listrik",
+    "title": "Mengenal PLTS Atap: Dari Cahaya Matahari Menjadi Listrik",
+    "category": "Panduan Pemula",
+    "summary": "Kenali cara kerja sel fotovoltaik, panel surya, inverter, dan hubungan PLTS dengan kebutuhan listrik rumah.",
+    "tags": ["PLTS Atap", "Fotovoltaik", "Dasar Energi"],
+    "paragraphs": [
+      "PLTS atap menggunakan modul fotovoltaik untuk mengubah energi cahaya menjadi listrik. Sel fotovoltaik dibuat dari bahan semikonduktor. Sejumlah sel disusun menjadi modul atau panel, kemudian beberapa panel dapat dirangkai menjadi satu susunan pembangkit. Panel merupakan bagian penting, tetapi sebuah sistem yang dapat digunakan di rumah membutuhkan lebih dari panel saja [1].",
+      "Listrik dari panel berupa arus searah atau DC. Peralatan rumah umumnya memakai arus bolak-balik atau AC, sehingga dibutuhkan inverter. Rangka penyangga, pengawatan, perangkat proteksi, dan penghubung ke instalasi bangunan juga menjadi bagian dari rancangan sistem. Komponen tersebut harus dipilih sebagai satu kesatuan, bukan hanya berdasarkan jumlah panel [1].",
+      "Bayangkan sebuah rumah memiliki beberapa kegiatan pada siang hari: menyalakan kipas, komputer, dan pompa air. Ketika PLTS menghasilkan listrik, energi itu dapat digunakan untuk membantu memenuhi kebutuhan tersebut. Besarnya kontribusi PLTS bergantung pada produksi dan kebutuhan pada saat yang sama. Memiliki panel di atap tidak berarti seluruh tagihan langsung hilang.",
+      "Untuk mulai belajar, bedakan tiga pertanyaan. Berapa kapasitas panel yang dipasang? Berapa energi yang dihasilkan dalam sehari? Berapa bagian energi itu yang benar-benar digunakan di rumah? Pertanyaan pertama terkait ukuran sistem, sedangkan dua pertanyaan berikutnya menjelaskan manfaat operasionalnya. Catatan konsumsi dan hasil survei membantu menjawabnya.",
+      "Langkah awal yang praktis adalah mengumpulkan tagihan listrik, mencatat pola pemakaian siang hari, lalu meminta pemeriksaan atap dan instalasi. Artikel ini merupakan pengantar konsep, bukan rancangan pemasangan. Penentuan komponen dan pekerjaan kelistrikan perlu dilakukan tenaga yang kompeten."
+    ],
+    "sources": [{"title": "U.S. Department of Energy — Solar Photovoltaic Technology Basics", "url": "https://www.energy.gov/cmei/systems/solar-photovoltaic-technology-basics"}]
+  },
+  {
+    "slug": "beda-kwp-kw-dan-kwh-pada-panel-surya",
+    "title": "Jangan Tertukar: Perbedaan kWp, kW, dan kWh",
+    "category": "Panduan Pemula",
+    "summary": "Contoh sederhana untuk memahami kapasitas panel, daya sesaat, dan energi yang muncul pada tagihan serta dashboard.",
+    "tags": ["kWp", "kWh", "Monitoring"],
+    "paragraphs": [
+      "Saat membandingkan penawaran PLTS, kita sering menemukan satuan kWp, kW, dan kWh. Ketiganya menjawab pertanyaan yang berbeda. kWp menyatakan kapasitas nominal puncak modul pada kondisi pengujian standar. kW menyatakan daya pada suatu saat. kWh menyatakan energi yang terkumpul selama suatu durasi. Kapasitas nominal bukan janji daya yang selalu tersedia sepanjang hari.",
+      "Sebagai contoh hitungan, sepuluh panel dengan kapasitas masing-masing 550 Wp memiliki kapasitas total 5.500 Wp, atau 5,5 kWp. Angka itu diperoleh dari penjumlahan kapasitas panel. Pada kondisi lapangan, daya sesaat dapat lebih rendah karena kondisi penyinaran, temperatur, dan karakteristik sistem. Estimasi produksi memerlukan informasi lokasi dan konfigurasi, seperti yang digunakan dalam pemodelan PVWatts [1].",
+      "Untuk memahami kWh, bayangkan sebuah beban menggunakan daya konstan 1 kW selama 3 jam. Energi yang dipakai adalah 1 × 3 = 3 kWh. Jika dayanya 0,5 kW selama 4 jam, energinya menjadi 2 kWh. Contoh ini mengasumsikan daya tetap; pada peralatan yang berubah-ubah, energi merupakan akumulasi dayanya sepanjang waktu.",
+      "Pada dashboard, angka daya sesaat membantu melihat kondisi sekarang, sedangkan energi harian membantu melihat hasil selama hari tersebut. Membandingkan daya pukul sembilan pagi dengan daya tengah hari tidak sama dengan membandingkan produksi dua hari penuh. Gunakan satuan dan rentang waktu yang sama ketika mengevaluasi hasil.",
+      "Kesalahan yang perlu dihindari adalah mengalikan kapasitas kWp dengan 24 jam lalu menganggapnya produksi harian. Untuk pemeriksaan awal, tuliskan satuan pada setiap angka. Bila sebuah penawaran menyebut penghematan bulanan, mintalah penjelasan energi, pola pemakaian, dan asumsi harga listrik yang mendasarinya."
+    ],
+    "sources": [{"title": "PVWatts Calculator — tujuan estimasi dan batasan model", "url": "https://pvwatts.nlr.gov/"}]
+  },
+  {
+    "slug": "menentukan-kapasitas-plts-dari-pemakaian-rumah",
+    "title": "Menentukan Kapasitas PLTS dari Kebutuhan, Bukan Sekadar Luas Atap",
+    "category": "Teknis & Instalasi",
+    "summary": "Pelajari urutan membaca kebutuhan energi, membuat estimasi awal, dan memeriksa kelayakan atap sebelum memilih kapasitas PLTS.",
+    "tags": ["Perencanaan", "Kapasitas", "Kalkulator"],
+    "paragraphs": [
+      "Atap yang luas membuka pilihan pemasangan, tetapi ukuran sistem tetap perlu disesuaikan dengan kebutuhan. Mulailah dari konsumsi energi dalam kWh, lalu perhatikan kapan energi itu digunakan. Dua rumah dengan tagihan bulanan yang sama dapat memiliki kebutuhan PLTS yang berbeda apabila rumah pertama aktif pada siang hari dan rumah kedua lebih banyak memakai listrik pada malam hari.",
+      "Untuk latihan, gunakan pendekatan energi harian = kapasitas kWp × jam matahari ekuivalen × faktor kinerja. Misalkan kapasitas 3,3 kWp, jam matahari ekuivalen 4, dan faktor kinerja 0,8. Hasil hitungnya adalah 10,56 kWh per hari. Dalam 30 hari yang diasumsikan seragam, hasilnya 316,8 kWh. Seluruh angka ini adalah asumsi pembelajaran, bukan data cuaca Samarinda atau jaminan hasil pemasangan.",
+      "Pendekatan sederhana tersebut berguna untuk memahami hubungan antarvariabel. Untuk menilai lokasi nyata, diperlukan pemodelan yang mempertimbangkan data penyinaran, konfigurasi, dan rugi-rugi sistem. PVWatts memang ditujukan untuk estimasi awal produksi dan menyatakan bahwa hasilnya memiliki asumsi serta ketidakpastian [1].",
+      "Setelah estimasi energi dibuat, periksa ruang atap yang benar-benar dapat digunakan. Sisakan akses pemeliharaan dan perhatikan area yang terhalang, kondisi struktur, serta jalur pemasangan. Luas atap keseluruhan tidak otomatis sama dengan luas efektif untuk panel. Keputusan teknis ini membutuhkan survei lapangan.",
+      "Mintalah penawaran yang menjelaskan kapasitas panel, kapasitas inverter, perkiraan produksi bulanan, dan porsi pemakaian langsung. Bandingkan pula kondisi jika produksi lebih rendah atau kebutuhan rumah berubah. Sistem yang sesuai adalah sistem yang bisa dijelaskan asumsi dan batasannya, bukan sekadar sistem dengan kapasitas paling besar."
+    ],
+    "sources": [{"title": "PVWatts Calculator — estimasi produksi sistem fotovoltaik", "url": "https://pvwatts.nlr.gov/"}]
+  },
+  {
+    "slug": "fungsi-inverter-dan-plts-saat-listrik-padam",
+    "title": "Fungsi Inverter dan Mengapa PLTS Belum Tentu Menyala Saat Listrik Padam",
+    "category": "Teknis & Instalasi",
+    "summary": "Inverter mengubah DC menjadi AC, tetapi kemampuan cadangan listrik bergantung pada rancangan keseluruhan sistem.",
+    "tags": ["Inverter", "On Grid", "Listrik Cadangan"],
+    "paragraphs": [
+      "Inverter mengubah listrik DC dari panel menjadi AC yang digunakan instalasi rumah dan jaringan. Sebagian inverter juga menyediakan fungsi monitoring dan komunikasi. Pada sistem yang terhubung jaringan, inverter harus berinteraksi dengan kondisi kelistrikan jaringan, sehingga pemilihannya bukan hanya soal mencocokkan angka daya [1].",
+      "Salah satu salah paham yang sering muncul adalah menganggap semua rumah berpanel surya akan tetap mendapatkan listrik ketika PLN padam. Kemampuan beroperasi tanpa jaringan memerlukan rancangan yang memang mendukungnya. Department of Energy menjelaskan bahwa sistem surya dengan baterai dapat menggunakan inverter lanjutan untuk beroperasi saat gangguan jaringan apabila dirancang untuk tujuan tersebut [1].",
+      "Pilihan arsitektur juga memengaruhi perilaku sistem. String inverter melayani serangkaian panel, sedangkan microinverter ditempatkan pada masing-masing panel. Bayangan atau gangguan pada satu panel dapat memiliki dampak yang berbeda menurut arsitekturnya. Pilihan tersebut perlu dinilai bersama tata letak, biaya, dan kebutuhan pemeliharaan [1].",
+      "Sebelum membeli, buat daftar beban yang benar-benar perlu menyala saat pemadaman. Misalnya lampu penerangan, router, atau peralatan tertentu. Mintalah pemasang menjelaskan batas daya keluaran cadangan, kapasitas energi yang tersedia, dan pemisahan sirkuit. Menuliskan kebutuhan secara konkret lebih berguna daripada hanya meminta sistem yang disebut hybrid.",
+      "Saat membaca spesifikasi, periksa mode operasi dan penjelasan kondisi gagal jaringan. Jangan menganggap label pemasaran sebagai bukti seluruh rumah dapat ditopang. Pemasangan dan pengujian perpindahan sumber harus ditangani tenaga kompeten. Pengguna cukup memahami batas operasinya dan meminta petunjuk pemakaian yang jelas."
+    ],
+    "sources": [{"title": "U.S. Department of Energy — Solar Integration: Inverters and Grid Services Basics", "url": "https://www.energy.gov/cmei/systems/solar-integration-inverters-and-grid-services-basics"}]
+  },
+  {
+    "slug": "perlukah-baterai-untuk-plts-rumah",
+    "title": "Perlukah Baterai untuk PLTS Rumah? Mulai dari Tujuan Pemakaiannya",
+    "category": "Panduan Pemula",
+    "summary": "Pahami perbedaan menyimpan energi, memenuhi beban malam, dan menyediakan cadangan ketika jaringan padam.",
+    "tags": ["Baterai", "Penyimpanan Energi", "Hybrid"],
+    "paragraphs": [
+      "Baterai memungkinkan sebagian energi dari PLTS disimpan untuk digunakan pada waktu lain. Department of Energy menyebut kombinasi pembangkit surya dan penyimpanan sebagai solar-plus-storage. Tujuannya dapat berkaitan dengan penggunaan energi di luar waktu produksi, tetapi penambahan baterai juga berarti ada komponen dan pertimbangan biaya tambahan [1].",
+      "Kapasitas energi baterai dan kemampuan daya keluarannya perlu dibaca secara terpisah. Energi, biasanya dalam kWh, berkaitan dengan jumlah yang dapat disimpan. Daya, dalam kW, berkaitan dengan besarnya beban pada satu waktu. Memiliki kapasitas energi besar tidak selalu berarti seluruh peralatan dapat dinyalakan bersamaan [1].",
+      "Sebagai latihan, anggap energi yang benar-benar dapat dipakai dari baterai adalah 4 kWh. Jika beban konstan 0,5 kW, pembagian sederhana memberikan durasi 8 jam. Bila bebannya 2 kW, durasinya menjadi 2 jam. Hitungan ini mengabaikan variasi beban dan rugi-rugi lain; dalam perancangan nyata batas penggunaan baterai dan efisiensi harus dihitung.",
+      "Sebelum memilih kapasitas, tuliskan tujuan utamanya. Apakah ingin menggunakan lebih banyak energi surya pada malam hari, atau menjaga beberapa beban penting saat pemadaman? Jawaban itu menentukan pola penggunaan, bukan hanya ukuran baterai. Mintalah perbandingan rancangan dengan dan tanpa baterai agar manfaat tambahannya dapat dinilai.",
+      "Baterai bukan tambahan yang otomatis membuat semua sistem menjadi cadangan listrik rumah. Pastikan kompatibilitas, batas daya, pengamanan, serta cara operasi dijelaskan dalam penawaran. Untuk pengguna pemula, keputusan yang baik dimulai dari kebutuhan beban dan lama dukungan yang diinginkan, kemudian diterjemahkan menjadi rancangan oleh pemasang."
+    ],
+    "sources": [{"title": "U.S. Department of Energy — Solar-Plus-Storage 101", "url": "https://www.energy.gov/cmei/systems/articles/solar-plus-storage-101"}]
+  },
+  {
+    "slug": "pengaruh-cuaca-dan-bayangan-terhadap-produksi-plts",
+    "title": "Mengapa Produksi PLTS Berubah? Mengenal Cuaca dan Bayangan",
+    "category": "Teknis & Instalasi",
+    "summary": "Produksi panel berubah mengikuti sumber cahaya dan kondisi lokasi; satu hari mendung belum cukup untuk menilai kerusakan sistem.",
+    "tags": ["Cuaca", "Bayangan", "Produksi Energi"],
+    "paragraphs": [
+      "Energi matahari yang mencapai suatu lokasi tidak tetap. Letak geografis, waktu, musim, bentang lingkungan, dan cuaca memengaruhi penyinaran. Cahaya juga dapat tersebar oleh atmosfer dan awan. Karena itu, kondisi mendung mengubah sumber cahaya yang diterima panel, bukan sekadar mengubah suasana langit [1].",
+      "Bayangan dari pohon, bangunan, atau bagian atap perlu diperiksa sebelum pemasangan. Bayangan dapat berpindah sepanjang hari sehingga pengamatan sesaat belum menggambarkan seluruh pola. Panduan konsumen Department of Energy menekankan pentingnya pemeriksaan sumber bayangan pada lokasi panel [2].",
+      "Contoh cara membaca dashboard adalah membandingkan energi harian selama beberapa hari, lalu menambahkan catatan cuaca. Jika hasil turun saat hari lebih mendung dan kembali naik pada kondisi lebih cerah, pola tersebut memiliki penjelasan yang masuk akal. Namun, catatan cuaca saja belum membuktikan semua komponen sehat. Gangguan tetap perlu diperiksa jika penurunan berlangsung tidak wajar.",
+      "Untuk latihan, anggap hari pertama menghasilkan 12 kWh dan hari kedua 9 kWh. Penurunannya adalah 3 kWh, atau 25% terhadap hari pertama. Angka itu hanya menjelaskan perubahan hasil. Ia tidak langsung menunjukkan penyebabnya, karena durasi penyinaran, bayangan, ketersediaan perangkat, dan faktor lain belum dibandingkan.",
+      "Simpan tanggal, energi harian, kejadian pemadaman, serta pesan gangguan yang muncul. Dengan catatan yang konsisten, teknisi dapat menilai masalah lebih cepat. Hindari menilai kualitas seluruh sistem dari satu tangkapan layar daya sesaat atau menjanjikan produksi yang sama setiap hari sepanjang tahun."
+    ],
+    "sources": [
+      {"title": "U.S. Department of Energy — Solar Radiation Basics", "url": "https://www.energy.gov/cmei/systems/solar-radiation-basics"},
+      {"title": "U.S. Department of Energy — Own Your Power! A Consumer Guide to Solar Electricity for the Home", "url": "https://www.energy.gov/sites/default/files/2013/11/f5/43844.pdf"}
+    ]
+  },
+  {
+    "slug": "merawat-panel-surya-dan-membaca-penurunan-kinerja",
+    "title": "Merawat PLTS: Mulai dari Catatan Produksi dan Pemeriksaan Berkala",
+    "category": "Teknis & Instalasi",
+    "summary": "Kenali dampak kotoran, peran monitoring, dan alasan jadwal perawatan sebaiknya mengikuti kondisi lokasi.",
+    "tags": ["Pemeliharaan", "Soiling", "Monitoring"],
+    "paragraphs": [
+      "PLTS membutuhkan perhatian setelah dipasang. Pemeriksaan indikator operasi, pencatatan produksi, dan tindak lanjut pesan gangguan membantu menjaga kinerja. Panduan operasi dan pemeliharaan Department of Energy memasukkan pemantauan produksi serta pesan pada inverter sebagai bagian penting pengelolaan sistem [1].",
+      "Salah satu penyebab penurunan hasil adalah soiling, yaitu penumpukan debu, polusi, atau kotoran biologis pada modul. IEA PVPS menjelaskan bahwa dampaknya perlu dipahami melalui pengukuran dan strategi mitigasi yang menyesuaikan lokasi. Jadwal pembersihan tidak seharusnya dipilih hanya berdasarkan kebiasaan lokasi lain [2].",
+      "Bagi pemilik rumah, langkah yang mudah adalah membuat buku catatan sederhana: tanggal, energi harian, pesan gangguan, dan kegiatan perawatan. Jika ada pekerjaan oleh teknisi, simpan ringkasan pemeriksaan dan rekomendasinya. Catatan tersebut membantu membedakan perubahan sesaat dari penurunan yang berulang.",
+      "Misalnya hasil mingguan turun, jangan langsung menyimpulkan panel kotor. Periksa terlebih dahulu apakah ada pemadaman, cuaca berbeda, atau data yang tidak terkirim. Setelah itu, minta teknisi menilai kondisi fisik sesuai petunjuk pabrikan. Tujuan pemeriksaan adalah menemukan penyebab, bukan sekadar mengembalikan angka dashboard dengan asumsi yang belum diuji.",
+      "Pekerjaan di atap dan dekat instalasi DC memerlukan prosedur yang sesuai. Pemilik tidak perlu membuka konektor, mengubah proteksi, atau memanjat atap untuk mengejar kenaikan produksi. Mintalah rencana pemeliharaan yang menjelaskan siapa pelaksananya, kapan pemeriksaan dibutuhkan, serta bagaimana hasilnya dicatat. Dengan begitu, perawatan dapat ditinjau manfaatnya dari waktu ke waktu."
+    ],
+    "sources": [
+      {"title": "U.S. Department of Energy — Operate and Maintain an Existing Photovoltaic System", "url": "https://www.energy.gov/cmei/femp/life-cycle-photovoltaic-systems-operate-and-maintain-existing-photovoltaic-system"},
+      {"title": "IEA PVPS (2025) — Understanding, Measuring, and Mitigating Soiling Losses in PV Power Systems", "url": "https://iea-pvps.org/fact-sheets/fs-soiling-losses/"}
+    ]
+  },
+  {
+    "slug": "menghitung-penghematan-dan-balik-modal-plts",
+    "title": "Menghitung Penghematan dan Balik Modal PLTS secara Transparan",
+    "category": "Finansial & ROI",
+    "summary": "Contoh aritmetika untuk membedakan energi yang diproduksi, dipakai sendiri, dan penghematan bersih sebelum menghitung balik modal.",
+    "tags": ["Penghematan", "Balik Modal", "Simulasi"],
+    "paragraphs": [
+      "Perkiraan penghematan sebaiknya dimulai dari energi yang menggantikan pembelian listrik. Produksi total dan energi yang dipakai sendiri merupakan dua angka berbeda. Jika sebagian produksi tidak dimanfaatkan langsung, nilainya perlu dinilai sesuai ketentuan dan rancangan yang berlaku. Jangan otomatis menganggap setiap kWh produksi menjadi pengurangan tagihan dengan nilai yang sama.",
+      "Berikut contoh hitungan buatan untuk belajar, bukan harga atau tarif resmi. Misalkan produksi 400 kWh per bulan, pemakaian langsung 70%, dan tarif asumsi Rp1.500 per kWh. Energi yang menggantikan pembelian adalah 280 kWh. Penghematan kotor menjadi 280 × Rp1.500 = Rp420.000 per bulan. Ekspor diasumsikan bernilai nol dalam contoh ini.",
+      "Jika biaya pemeliharaan diasumsikan Rp600.000 per tahun, penghematan bersih tahunan adalah 12 × Rp420.000 dikurangi Rp600.000, yaitu Rp4.440.000. Dengan investasi awal contoh Rp45.000.000, waktu balik modal sederhana sekitar 10,1 tahun. Angka ini belum memasukkan biaya pembiayaan, perubahan produksi, penggantian komponen, perubahan tarif, atau nilai waktu uang.",
+      "Ubah satu asumsi untuk melihat pengaruhnya. Jika pemakaian langsung turun menjadi 50%, penghematan kotor menjadi Rp300.000 per bulan. Dengan biaya pemeliharaan yang sama, penghematan bersih tahunan menjadi Rp3.000.000, sehingga balik modal sederhana menjadi 15 tahun. Perbedaan ini menunjukkan pentingnya pola pemakaian.",
+      "Estimasi teknis juga memiliki ketidakpastian; PVWatts menyatakannya secara terbuka [1]. Untuk konteks Indonesia, siaran pers ESDM tentang Permen 2/2024 menjelaskan penghapusan perhitungan ekspor-impor pada pengaturan tersebut [2]. Periksa ketentuan yang berlaku pada pelanggan dan waktu permohonan sebelum mengambil keputusan. Mintalah semua asumsi tertulis dan bandingkan beberapa skenario."
+    ],
+    "sources": [
+      {"title": "PVWatts Calculator — asumsi dan ketidakpastian estimasi", "url": "https://pvwatts.nlr.gov/"},
+      {"title": "Kementerian ESDM (5 Maret 2024) — penjelasan Permen ESDM 2/2024", "url": "https://esdm.go.id/id/media-center/arsip-berita/aturan-terbaru-plts-atap-terbit-kini-kapasitas-pemasangan-tidak-dibatasi"}
+    ]
+  },
+  {
+    "slug": "memahami-permen-esdm-2-2024-dan-kuota-plts-atap",
+    "title": "Memahami Permen ESDM 2/2024: Kuota dan Perencanaan PLTS Atap",
+    "category": "Regulasi & Kebijakan",
+    "summary": "Pengantar terhadap pokok perubahan yang dijelaskan ESDM pada 2024 dan pertanyaan yang perlu dibawa sebelum mengajukan pemasangan.",
+    "tags": ["ESDM", "PLTS Atap", "Kuota"],
+    "paragraphs": [
+      "Dalam siaran pers 5 Maret 2024, Kementerian ESDM menjelaskan penerbitan Permen ESDM Nomor 2 Tahun 2024 untuk PLTS atap yang terhubung dengan jaringan pemegang IUPTLU. Penjelasan tersebut menyebut aturan mulai berlaku 31 Januari 2024 dan menggantikan Permen 26/2021 [1]. Artikel ini membahas pengantar aturan 2024, bukan konfirmasi persetujuan untuk suatu lokasi.",
+      "Pokok yang dijelaskan ESDM mencakup pengaturan melalui kuota pengembangan, penghapusan batas kapasitas 100% daya tersambung dalam pengaturan sebelumnya, serta penghapusan perhitungan ekspor-impor. Kuota perlu ditindaklanjuti oleh pemegang IUPTLU. Karena itu, judul tentang kapasitas yang tidak dibatasi tidak boleh dibaca sebagai kebebasan memasang dan menyambungkan sistem tanpa proses [1].",
+      "Sebelum meminta penawaran final, ajukan pertanyaan yang spesifik: siapa pemegang wilayah usaha di lokasi, bagaimana kuota dan proses permohonannya, dokumen apa yang dibutuhkan, serta kapan persetujuan dapat diperiksa? Simpan jawaban tertulis agar keputusan pembelian memiliki dasar yang dapat ditelusuri.",
+      "Pisahkan pula simulasi teknis dari status perizinan. Kalkulator dapat membantu memperkirakan energi atau biaya, tetapi hasil kalkulator tidak membuktikan bahwa permohonan disetujui. Demikian juga, sebuah paket yang tercantum di katalog belum memastikan seluruh kondisi teknis jaringan dan bangunan telah dipenuhi.",
+      "Sebelum mengajukan pemasangan nyata, baca naskah resmi dan konfirmasikan ketentuan terbaru beserta aturan peralihan yang mungkin berkaitan dengan pelanggan lama [2]. Persyaratan dan kuota perlu diperiksa sesuai wilayah serta waktu permohonan. Artikel edukasi ini membantu menyiapkan pertanyaan, sedangkan keputusan administratif tetap mengikuti dokumen resmi dan pemeriksaan instansi terkait."
+    ],
+    "sources": [
+      {"title": "Kementerian ESDM — Siaran pers 130.Pers/04/SJI/2024, 5 Maret 2024", "url": "https://esdm.go.id/id/media-center/arsip-berita/aturan-terbaru-plts-atap-terbit-kini-kapasitas-pemasangan-tidak-dibatasi"},
+      {"title": "JDIH ESDM — Naskah Permen ESDM Nomor 2 Tahun 2024", "url": "https://jdih.esdm.go.id/storage/document/Permen%20ESDM%20Nomor%202%20Tahun%202024.pdf"}
+    ]
+  },
+  {
+    "slug": "memahami-dampak-lingkungan-panel-surya-sepanjang-siklus-hidup",
+    "title": "Dampak Lingkungan Panel Surya: Melihat Seluruh Siklus Hidup",
+    "category": "Panduan Pemula",
+    "summary": "Kenali penilaian siklus hidup dan cara membaca estimasi pengurangan emisi tanpa menganggapnya sebagai pengukuran langsung.",
+    "tags": ["Lingkungan", "Emisi", "Siklus Hidup"],
+    "paragraphs": [
+      "Manfaat lingkungan PLTS perlu dibaca sepanjang siklus hidupnya. Penilaian siklus hidup atau LCA menelusuri aliran material, energi, dan dampak yang berkaitan dengan produk. IEA PVPS mengembangkan inventori untuk mendukung evaluasi sistem fotovoltaik, termasuk komponen serta proses produksinya [1]. Pendekatan ini membantu menghindari penilaian yang hanya melihat tahap penggunaan.",
+      "Dalam konteks rumah, keberadaan baterai juga perlu diperhitungkan. Kajian IEA PVPS tentang sistem PV dan penyimpanan membandingkan konfigurasi serta menilai indikator lingkungan pada listrik yang digunakan sendiri [2]. Hasil kajian tertentu memiliki asumsi lokasi, teknologi, dan konfigurasi sehingga tidak boleh langsung dijadikan angka pasti untuk semua rumah.",
+      "Dashboard sering menyajikan estimasi emisi yang dihindari. Sebagai contoh hitungan buatan, jika energi pengganti listrik jaringan adalah 100 kWh dan faktor emisi asumsi 0,8 kg CO2 per kWh, hasilnya 80 kg CO2. Angka itu merupakan hasil model. Ia bukan pembacaan sensor gas dan belum otomatis mewakili seluruh dampak siklus hidup.",
+      "Untuk membaca klaim dengan cermat, tanyakan energi mana yang digunakan sebagai dasar, faktor emisi apa yang dipilih, dan periode perhitungannya. Jika nilai tersebut diubah, hasil estimasinya juga berubah. Kesetaraan pohon, bila ditampilkan, membutuhkan asumsi tambahan dan sebaiknya tidak dianggap sebagai pengganti kegiatan penanaman nyata.",
+      "Bagi pengguna, langkah yang masuk akal adalah memanfaatkan energi secara efisien, merawat sistem agar berfungsi, dan menyimpan dokumentasi komponennya. Ketika komponen mencapai akhir penggunaan, diskusikan pengelolaan melalui pihak yang sesuai. Penilaian lingkungan yang bermanfaat menjelaskan dasar hitung dan keterbatasannya, sehingga angka yang terlihat menarik tetap bisa ditinjau secara kritis."
+    ],
+    "sources": [
+      {"title": "IEA PVPS (2026) — Life Cycle Inventories of Photovoltaic Systems", "url": "https://iea-pvps.org/key-topics/t12-lci-pv-systems-2026/"},
+      {"title": "IEA PVPS — Environmental LCA of Residential PV and Battery Storage Systems", "url": "https://iea-pvps.org/key-topics/environmental-life-cycle-assessment-of-residential-pv-and-battery-storage-systems/"}
+    ]
+  }
+]

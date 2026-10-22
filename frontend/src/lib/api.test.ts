@@ -30,6 +30,14 @@ describe('authentication API boundaries', () => {
     expect(dispatchEvent.mock.calls[0][0].type).toBe('solarsync-session-expired');
   });
 
+  it('does not expire a session when legacy account-linking credentials are wrong', async () => {
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', { dispatchEvent });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"detail":"Wrong credentials"}', { status: 401 })));
+    await expect(api('/auth/google/link', { method: 'POST' })).rejects.toMatchObject({ status: 401 });
+    expect(dispatchEvent).not.toHaveBeenCalled();
+  });
+
   it('discards a previous account response, including its expired-session event', async () => {
     let resolve!: (response: Response) => void;
     const dispatchEvent = vi.fn();

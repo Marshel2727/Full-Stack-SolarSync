@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
+import { useSystems } from '../../lib/queries';
 import { useAuth } from '../../context/AuthContext';
 
 interface CustomerSidebarProps {
@@ -25,50 +26,20 @@ interface CustomerSidebarProps {
 export function CustomerSidebar({ onNavigate }: CustomerSidebarProps) {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
+  const systems = useSystems();
 
   const navigationSections = [
-    {
-      title: 'PEMANTAUAN ENERGI',
-      items: [
-        {
-          name: 'Ringkasan Energi',
-          href: '/dashboard',
-          icon: LayoutDashboard,
-          
-        },
-        {
-          name: 'Analitik & Riwayat',
-          href: '/dashboard/energy',
-          icon: LineChart,
-        },
-        {
-          name: 'Dampak Lingkungan',
-          href: '/dashboard/impact',
-          icon: Leaf,
-        },
-        {
-          name: 'Perangkat & Inverter',
-          href: '/dashboard/devices',
-          icon: Cpu,
-        },
-      ],
-    },
-    {
-      title: 'LAYANAN & AKUN',
-      items: [
-        {
-          name: 'Progres Instalasi',
-          href: '/dashboard/installation',
-          icon: Clock,
-          
-        },
-        {
-          name: 'Profil & Keamanan',
-          href: '/dashboard/profile',
-          icon: User,
-        },
-      ],
-    },
+    { title: 'AKUN & LAYANAN', items: [
+      { name: systems.data?.length ? 'Ringkasan Energi' : 'Beranda Akun', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Pengajuan Instalasi', href: '/dashboard/installation', icon: Clock },
+      { name: 'Ajukan Survei', href: '/installation-request', icon: ArrowUpRight },
+      { name: 'Profil Akun', href: '/dashboard/profile', icon: User },
+    ] },
+    ...(systems.data?.length ? [{ title: 'MONITORING ENERGI', items: [
+      { name: 'Analitik & Riwayat', href: '/dashboard/energy', icon: LineChart },
+      { name: 'Dampak Lingkungan', href: '/dashboard/impact', icon: Leaf },
+      { name: 'Perangkat & Inverter', href: '/dashboard/devices', icon: Cpu },
+    ] }] : []),
   ];
 
   const initials = user?.name

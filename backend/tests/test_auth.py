@@ -28,7 +28,7 @@ TOKEN = "a" * 64
 
 def account():
     return SimpleNamespace(id=7, email="person@example.com", phone=None, name="Person",
-                           role="customer", is_active=True, password_hash="stored-hash")
+                           role="admin", is_active=True, password_hash="stored-hash")
 
 
 class AuthTests(unittest.TestCase):

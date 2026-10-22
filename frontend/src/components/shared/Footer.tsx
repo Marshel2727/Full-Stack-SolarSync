@@ -74,6 +74,7 @@ export const Footer: React.FC = () => {
                   <span>Masuk Akun</span>
                 </Link>
               </li>
+              <li><Link href="/register" className="text-slate-300 hover:text-amber-400">Daftar Akun Pelanggan</Link></li>
               <li>
                 <Link href="/dashboard" className="text-slate-300 hover:text-amber-400 hover:translate-x-0.5 inline-flex items-center gap-1 transition-all duration-200">
                   <span>Customer Dashboard</span>
@@ -97,20 +98,10 @@ export const Footer: React.FC = () => {
             <h4 className="text-white text-xs font-black uppercase tracking-wider mb-4 font-heading text-amber-400/90">
               Hubungi Kami
             </h4>
-            <ul className="space-y-3 text-xs text-slate-300">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <span className="leading-relaxed">Alamat layanan belum dipublikasikan</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="font-semibold text-white">Nomor layanan belum tersedia</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="font-semibold text-amber-300">Email layanan belum tersedia</span>
-              </li>
-            </ul>
+            <p className="text-sm leading-relaxed text-slate-300">Ceritakan kebutuhan energi dan rencana pemasangan Anda melalui formulir pengajuan.</p>
+            <Link href="/installation-request" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-700 px-4 py-3 text-sm font-semibold text-amber-300 hover:bg-emerald-900">
+              Ajukan konsultasi <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
 

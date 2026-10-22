@@ -4,10 +4,13 @@ from uuid import uuid4
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select, or_
+from sqlalchemy.exc import IntegrityError
 from app.model.installation import InstallationRequest, RequestStatusLog, RequestDocument
 from app.model.file import StoredFile
 from app.utils.uploads import store_attachment, private_file_path
-from app.model.user import Customer
+from app.model.user import Customer, User
+from app.model.system import Site
+from app.model.audit import AuditLog
 from app.model.package import SolarPackage
 from app.model.schemas.installation import RequestInput, StatusInput
 from app.service.package import package_data
@@ -21,6 +24,10 @@ def request_data(db, row):
     result.update(id=row.ticket_number, status=row.status, version=row.version,
                   createdAt=row.created_at.isoformat()+"Z", updatedAt=row.updated_at.isoformat()+"Z",
                   selectedPackageSlug=(row.package_snapshot_json or {}).get("slug"))
+    account_id = row.submitted_by_user_id
+    if account_id is None and row.customer_id:
+        account_id = db.scalar(select(Customer.user_id).where(Customer.id == row.customer_id))
+    result["accountUserId"] = str(account_id) if account_id else None
     result["timelineLogs"] = [dict(status=log.to_status, timestamp=log.created_at.isoformat()+"Z",
                                   note=log.note, updatedBy=log.actor_name_snapshot)
         for log in db.scalars(select(RequestStatusLog).where(RequestStatusLog.request_id == row.id)
@@ -111,4 +118,55 @@ def request_status(ticket: str, data: StatusInput, user, db):
     row.status = data.status
     row.version += 1
     db.commit()
+    return {"ok": True}
+
+
+def link_account(ticket, data, actor, db):
+    if actor.role != "admin":
+        raise HTTPException(403, "Hanya administrator yang dapat menautkan akun.")
+    note = data.verificationNote.strip()
+    if not data.ownershipConfirmed or len(note) < 10:
+        raise HTTPException(422, "Konfirmasi dan catatan verifikasi kepemilikan diperlukan.")
+    target = db.scalar(select(User).where(User.id == data.userId).with_for_update())
+    if not target or target.role != "customer" or not target.is_active:
+        raise HTTPException(422, "Pilih akun pelanggan aktif.")
+    row = db.scalar(select(InstallationRequest).where(
+        InstallationRequest.ticket_number == ticket).with_for_update())
+    if not row:
+        raise HTTPException(404, "Pengajuan tidak ditemukan.")
+    if row.submitted_by_user_id and row.submitted_by_user_id != target.id:
+        raise HTTPException(409, "Pengajuan sudah terhubung ke akun lain.")
+    customer = db.scalar(select(Customer).where(Customer.id == row.customer_id).with_for_update()) if row.customer_id else None
+    existing = db.scalar(select(Customer).where(Customer.user_id == target.id).with_for_update())
+    if customer and (not customer.is_active or customer.user_id not in (None, target.id)):
+        raise HTTPException(409, "Data pelanggan sudah terhubung ke akun lain atau tidak aktif.")
+    if customer and existing and customer.id != existing.id:
+        raise HTTPException(409, "Akun sudah terhubung ke data pelanggan lain.")
+    if row.submitted_by_user_id == target.id and customer and customer.user_id == target.id:
+        return {"ok": True}
+    customer = customer or existing
+    if customer and not customer.is_active:
+        raise HTTPException(409, "Data pelanggan tidak aktif.")
+    if row.site_id:
+        site = db.get(Site, row.site_id)
+        if not customer or not site or site.customer_id != customer.id:
+            raise HTTPException(409, "Lokasi pengajuan tidak sesuai dengan data pelanggan.")
+    try:
+        if not customer:
+            customer = Customer(customer_code="CUST-"+uuid4().hex, user_id=target.id,
+                name=row.full_name, email=row.email, phone=row.phone_number, is_active=True)
+            db.add(customer)
+            db.flush()
+        customer.user_id = target.id
+        row.customer_id = customer.id
+        row.submitted_by_user_id = target.id
+        row.version += 1
+        db.add(AuditLog(actor_user_id=actor.id, action="link_customer_account",
+            entity_type="installation_requests", entity_id=row.id,
+            changes_json={"user_id": target.id, "customer_id": customer.id,
+                          "ownership_verified": True, "verification_note": note}))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Pengaitan berbenturan dengan perubahan lain. Muat ulang pengajuan.") from None
     return {"ok": True}

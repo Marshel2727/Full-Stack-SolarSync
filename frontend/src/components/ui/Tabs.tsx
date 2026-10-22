@@ -13,6 +13,7 @@ interface TabsProps {
   onChange: (id: string) => void;
   variant?: 'pills' | 'underline';
   className?: string;
+  panelId?: string;
 }
 
 export const Tabs: React.FC<TabsProps> = ({
@@ -21,15 +22,26 @@ export const Tabs: React.FC<TabsProps> = ({
   onChange,
   variant = 'pills',
   className = '',
+  panelId,
 }) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const current = tabs.findIndex(tab => tab.id === activeTab);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    if (!tabs[next]) return;
+    onChange(tabs[next].id);
+    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+  };
   if (variant === 'underline') {
     return (
-      <div className={`flex border-b border-surface-border gap-6 overflow-x-auto no-scrollbar ${className}`}>
+      <div role="tablist" aria-label="Filter kategori" onKeyDown={handleKeyDown} className={`flex border-b border-surface-border gap-6 overflow-x-auto no-scrollbar ${className}`}>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
           return (
             <button
-              key={tab.id}
+              type="button" role="tab" id={panelId ? `${panelId}-tab-${tab.id}` : undefined} aria-controls={panelId} aria-selected={isActive} tabIndex={isActive ? 0 : -1}
+            key={tab.id}
               onClick={() => onChange(tab.id)}
               className={`flex items-center gap-2 pb-3.5 pt-1 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap cursor-pointer ${
                 isActive
@@ -56,11 +68,12 @@ export const Tabs: React.FC<TabsProps> = ({
   }
 
   return (
-    <div className={`inline-flex p-1 bg-surface-muted rounded-xl border border-surface-border overflow-x-auto max-w-full ${className}`}>
+    <div role="tablist" aria-label="Filter kategori" onKeyDown={handleKeyDown} className={`inline-flex p-1 bg-surface-muted rounded-xl border border-surface-border overflow-x-auto max-w-full ${className}`}>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
           <button
+            type="button" role="tab" id={panelId ? `${panelId}-tab-${tab.id}` : undefined} aria-controls={panelId} aria-selected={isActive} tabIndex={isActive ? 0 : -1}
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap cursor-pointer ${

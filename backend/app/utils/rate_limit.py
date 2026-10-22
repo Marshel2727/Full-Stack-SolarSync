@@ -52,6 +52,22 @@ def check_global_login_rate():
     _consume("global", "all", get_settings().login_global_limit, 60)
 
 
+def check_registration_rate(email):
+    # Separate namespace: sign-up must not consume an existing user's login quota.
+    for key, limit, seconds in (
+        ("auth:register:v1:global", 10, 60),
+        (f"auth:register:v1:email:{digest(email.casefold())}", 3, 3600),
+    ):
+        try:
+            retry_after = int(auth_redis().eval(_CONSUME, 1, key, limit, seconds))
+        except RedisError:
+            raise HTTPException(503, "Pendaftaran sementara tidak tersedia. Coba lagi nanti.",
+                                headers={"Retry-After": "30"}) from None
+        if retry_after:
+            raise HTTPException(429, "Terlalu banyak percobaan pendaftaran. Silakan tunggu lalu coba lagi.",
+                                headers={"Retry-After": str(retry_after)})
+
+
 def check_upload_rate():
     # Coarse shared limit, since the frontend proxy hides the original client IP.
     try:

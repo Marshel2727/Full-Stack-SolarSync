@@ -9,11 +9,12 @@ import { Input } from '../../components/ui/Input';
 import { Tabs } from '../../components/ui/Tabs';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { useSolar } from '../../context/SolarContext';
 import { Search, HelpCircle, MessageSquare, PhoneCall, Sparkles } from 'lucide-react';
 
 export default function FAQPage() {
-  const { faqs } = useSolar();
+  const { faqs, dataState } = useSolar();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -60,20 +61,21 @@ export default function FAQPage() {
           </p>
 
           {/* Search Box */}
-          <div className="max-w-md mx-auto pt-2">
+          <search className="max-w-md mx-auto pt-2 block">
             <Input
-              type="text"
+              type="search"
+              aria-label="Cari pertanyaan FAQ"
               placeholder="Cari pertanyaan (misal: baterai, hujan, garansi)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               leftIcon={<Search className="w-4 h-4" />}
             />
-          </div>
+          </search>
         </div>
 
         {/* Category Tabs */}
         <div className="flex justify-center overflow-x-auto">
-          <Tabs
+          <Tabs panelId="faq-results"
             tabs={categories}
             activeTab={selectedCategory}
             onChange={(id) => setSelectedCategory(id)}
@@ -81,21 +83,37 @@ export default function FAQPage() {
           />
         </div>
 
+        <div role="tabpanel" id="faq-results" aria-labelledby={`faq-results-tab-${selectedCategory}`} tabIndex={0}>
         {/* FAQ Accordion List */}
-        {accordionItems.length > 0 ? (
+        {dataState.faqs.isError && (
+          <EmptyState
+            title="Data belum dapat dimuat"
+            description="Periksa koneksi lalu coba lagi. Data sebelumnya tetap ditampilkan jika tersedia."
+            actionText="Coba lagi"
+            onAction={() => void dataState.faqs.refetch()}
+          />
+        )}
+        {dataState.faqs.isPending ? (
+          <SkeletonLoader count={4} className="h-20 w-full" />
+        ) : accordionItems.length > 0 ? (
           <Accordion items={accordionItems} defaultOpenId={accordionItems[0]?.id} />
-        ) : (
+        ) : !dataState.faqs.isError ? (
           <EmptyState
             title="Pertanyaan Tidak Ditemukan"
-            description={`Tidak ada hasil untuk pencarian "${searchQuery}". Silakan ajukan pertanyaan langsung ke tim konsultan energi kami.`}
+            description={
+              searchQuery
+                ? `Tidak ada hasil untuk pencarian "${searchQuery}". Silakan ajukan pertanyaan langsung ke tim konsultan energi kami.`
+                : 'Belum ada daftar pertanyaan pada kategori ini.'
+            }
             actionText="Reset Pencarian"
             onAction={() => {
               setSearchQuery('');
               setSelectedCategory('all');
             }}
           />
-        )}
+        ) : null}
 
+        </div>
         {/* Still have questions CTA card */}
         <div className="p-8 rounded-3xl bg-white border border-surface-border shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1 text-center sm:text-left">

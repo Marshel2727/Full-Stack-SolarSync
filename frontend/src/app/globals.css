@@ -3,9 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --scrollbar-thumb: #CBD5E1;
+    --scrollbar-track: #F1F5F9;
+  }
+
   html {
     scroll-behavior: smooth;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
   
   body {
@@ -16,6 +23,11 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', sans-serif;
     letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p, li, blockquote {
+    text-wrap: pretty;
   }
 
   /* Wrapped fields already show focus on their entire container, including icons. */
@@ -23,6 +35,33 @@
     outline: 2px solid #064e3b;
     outline-offset: 3px;
   }
+}
+
+/* Top-layer dialog animations */
+dialog {
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+dialog[open] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+dialog::backdrop {
+  transition-property: background-color, backdrop-filter, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
 }
 
 /* Shared workspace layout: used by customer and administrator pages. */
@@ -35,10 +74,29 @@
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
+  }
+  .animate-orb-1,
+  .animate-orb-2 {
+    transform: none !important;
+    animation: none !important;
+  }
+  .animate-ticker {
+    animation-play-state: paused !important;
+  }
+  dialog {
+    transform: none;
+    transition-duration: 0.1s;
+  }
+  @starting-style {
+    dialog[open] {
+      transform: none;
+    }
   }
 }
 
@@ -142,23 +200,25 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* Custom Scrollbar (legacy fallback for engines without standard scrollbar-color) */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-::-webkit-scrollbar-track {
-  background: #F1F5F9;
-}
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 9999px;
-}
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {

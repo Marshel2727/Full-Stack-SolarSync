@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -19,6 +19,15 @@ export default function AdminProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPkgId, setEditingPkgId] = useState<string | null>(null);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const saving = useRef(false);
+  const [pendingDelete, setPendingDelete] = useState<SolarPackage | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const emptyDetails = { description: '', idealFor: '', recommendedRoofAreaSqM: 15, warrantyPanelsYears: 25, warrantyInverterYears: 5, warrantyWorkmanshipYears: 2, isPopular: false, features: '', includedServices: '', exclusions: '', components: [] as SolarPackage['components'] };
+  const [details, setDetails] = useState(emptyDetails);
+  const changeDetail = <K extends keyof typeof emptyDetails>(key: K, value: typeof emptyDetails[K]) => setDetails(previous => ({ ...previous, [key]: value }));
+  const lines = (value: string) => value.split('\n').map(item => item.trim()).filter(Boolean);
+
   // Form State
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -30,6 +39,7 @@ export default function AdminProductsPage() {
   const [monthlyProdKwh, setMonthlyProdKwh] = useState(660);
 
   const openAddModal = () => {
+    setDetails(emptyDetails);
     setEditingPkgId(null);
     setName('');
     setSlug('');
@@ -43,6 +53,7 @@ export default function AdminProductsPage() {
   };
 
   const openEditModal = (pkg: SolarPackage) => {
+    setDetails({ description: pkg.description, idealFor: pkg.idealFor, recommendedRoofAreaSqM: pkg.recommendedRoofAreaSqM, warrantyPanelsYears: pkg.warrantyPanelsYears, warrantyInverterYears: pkg.warrantyInverterYears, warrantyWorkmanshipYears: pkg.warrantyWorkmanshipYears, isPopular: !!pkg.isPopular, features: pkg.features.join('\n'), includedServices: pkg.includedServices.join('\n'), exclusions: pkg.exclusions.join('\n'), components: pkg.components.map(component => ({ ...component })) });
     setEditingPkgId(pkg.id);
     setName(pkg.name);
     setSlug(pkg.slug);
@@ -57,53 +68,27 @@ export default function AdminProductsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
-
-    if (editingPkgId) {
-      const saved = await updatePackage(editingPkgId, {
-        name,
-        slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
-        segment,
-        capacityKwp: Number(capacityKwp),
-        tagline,
-        priceFromIdr: Number(priceFromIdr),
-        estimatedMonthlySavingsIdr: Number(monthlySavingsIdr),
+    if (saving.current || !name.trim()) return;
+    saving.current = true;
+    setIsSaving(true);
+    try {
+      const payload = {
+        name: name.trim(), slug: slug || name.toLowerCase().replace(/\s+/g, '-'), segment,
+        capacityKwp: Number(capacityKwp), tagline, ...details,
+        priceFromIdr: Number(priceFromIdr), estimatedMonthlySavingsIdr: Number(monthlySavingsIdr),
         estimatedMonthlyProductionKwh: Number(monthlyProdKwh),
-      });
-      if (!saved) return;
-    } else {
-      const saved = await addPackage({
-        name,
-        slug: slug || name.toLowerCase().replace(/\s+/g, '-') + `-${Date.now().toString().slice(-4)}`,
-        segment,
-        capacityKwp: Number(capacityKwp),
-        tagline,
-        description: tagline,
-        priceFromIdr: Number(priceFromIdr),
-        estimatedMonthlySavingsIdr: Number(monthlySavingsIdr),
-        estimatedMonthlyProductionKwh: Number(monthlyProdKwh),
-        warrantyPanelsYears: 25,
-        warrantyInverterYears: 10,
-        warrantyWorkmanshipYears: 5,
-        recommendedRoofAreaSqM: Math.round(Number(capacityKwp) * 4.5),
-        idealFor: 'Rumah tinggal atau tempat usaha',
-        features: [
-          `${Math.round((capacityKwp * 1000) / 550)}x Modul Surya Tier-1 Monocrystalline`,
-          'Smart Inverter High Efficiency',
-          'Rangka Aluminium PUIL 2020',
-          'Aplikasi Monitoring Real-Time',
-        ],
-        components: [
-          { name: 'Modul Surya 550 Wp', specs: 'Tier-1 High Efficiency', qty: Math.round((capacityKwp * 1000) / 550) },
-          { name: 'Smart Inverter', specs: 'On-Grid Single/3-Phase', qty: 1 },
-        ],
-        includedServices: ['Survei 3D', 'Instalasi', 'Asistensi Izin PLN'],
-        exclusions: ['Perbaikan struktur atap usang'],
-      });
-      if (!saved) return;
-    }
+        features: lines(details.features), includedServices: lines(details.includedServices), exclusions: lines(details.exclusions),
+      };
+      const saved = editingPkgId ? await updatePackage(editingPkgId, payload) : await addPackage(payload);
+      if (saved) setIsModalOpen(false);
+    } finally { saving.current = false; setIsSaving(false); }
+  };
 
-    setIsModalOpen(false);
+  const confirmDelete = async () => {
+    if (!pendingDelete || isDeleting) return;
+    setIsDeleting(true);
+    try { if (await deletePackage(pendingDelete.id)) setPendingDelete(null); }
+    finally { setIsDeleting(false); }
   };
 
   return (
@@ -154,7 +139,7 @@ export default function AdminProductsPage() {
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => deletePackage(pkg.id)}
+                        onClick={() => setPendingDelete(pkg)}
                         className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600"
                         title="Hapus Paket" aria-label={`Hapus paket ${pkg.name}`}
                       >
@@ -173,11 +158,11 @@ export default function AdminProductsPage() {
       {/* Add / Edit Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => { if (!saving.current) setIsModalOpen(false); }}
         title={editingPkgId ? 'Ubah Spesifikasi Paket' : 'Tambah Paket PLTS Baru'}
         maxWidth="lg"
       >
-        <form onSubmit={handleSave} className="space-y-4 text-xs">
+        <form onSubmit={handleSave} className="space-y-4 text-xs"><fieldset disabled={isSaving} className="space-y-4">
           <Input
             label="Nama Paket"
             value={name}
@@ -194,14 +179,16 @@ export default function AdminProductsPage() {
               options={[
                 { value: 'household', label: 'Rumah Tangga' },
                 { value: 'business', label: 'Bisnis / Ruko' },
-                { value: 'industry', label: 'Industri / Sekolah' },
+                { value: 'industry', label: 'Industri' },
+                { value: 'school', label: 'Sekolah / Kampus' },
+                { value: 'other', label: 'Lainnya' },
               ]}
             />
             <Input
               label="Kapasitas Sistem (kWp)"
               type="number"
-              step="0.1"
-              value={capacityKwp}
+              step="0.01" min="0.01"
+              value={capacityKwp || ''}
               onChange={(e) => setCapacityKwp(Number(e.target.value))}
               suffixText="kWp"
               required
@@ -220,7 +207,8 @@ export default function AdminProductsPage() {
               label="Estimasi Harga Mulai Dari (Rp)"
               type="number"
               prefixText="Rp"
-              value={priceFromIdr}
+              min="1"
+              value={priceFromIdr || ''}
               onChange={(e) => setPriceFromIdr(Number(e.target.value))}
               required
             />
@@ -228,21 +216,46 @@ export default function AdminProductsPage() {
               label="Estimasi Hemat / Bulan (Rp)"
               type="number"
               prefixText="Rp"
-              value={monthlySavingsIdr}
+              min="0"
+              value={monthlySavingsIdr || ''}
               onChange={(e) => setMonthlySavingsIdr(Number(e.target.value))}
               required
             />
           </div>
 
+          <Input label="Produksi bulanan (kWh)" type="number" min="0" value={monthlyProdKwh || ''} onChange={event => setMonthlyProdKwh(Number(event.target.value))} required />
+          <label className="block text-sm font-medium">Deskripsi lengkap<textarea required rows={4} value={details.description} onChange={event => changeDetail('description', event.target.value)} className="mt-2 w-full rounded-xl border border-slate-300 p-3" /></label>
+          <Input label="Cocok untuk" value={details.idealFor} onChange={event => changeDetail('idealFor', event.target.value)} required />
+          <Input label="Rekomendasi luas atap (m²)" type="number" min="0" step="0.1" value={details.recommendedRoofAreaSqM || ''} onChange={event => changeDetail('recommendedRoofAreaSqM', Number(event.target.value))} required />
+          <div className="admin-form-grid">
+            <Input label="Garansi panel (tahun)" type="number" min="0" value={details.warrantyPanelsYears} onChange={event => changeDetail('warrantyPanelsYears', Number(event.target.value))} required />
+            <Input label="Garansi inverter (tahun)" type="number" min="0" value={details.warrantyInverterYears} onChange={event => changeDetail('warrantyInverterYears', Number(event.target.value))} required />
+            <Input label="Garansi pengerjaan (tahun)" type="number" min="0" value={details.warrantyWorkmanshipYears} onChange={event => changeDetail('warrantyWorkmanshipYears', Number(event.target.value))} required />
+          </div>
+          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={details.isPopular} onChange={event => changeDetail('isPopular', event.target.checked)} />Tandai sebagai paket populer</label>
+          {([['features', 'Fitur'], ['includedServices', 'Layanan termasuk'], ['exclusions', 'Tidak termasuk']] as const).map(([key, label]) => <label key={key} className="block text-sm font-medium">{label}<span className="ml-2 text-xs font-normal text-slate-500">Satu item per baris</span><textarea rows={3} value={details[key]} onChange={event => changeDetail(key, event.target.value)} className="mt-2 w-full rounded-xl border border-slate-300 p-3" /></label>)}
+          <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h3 className="text-sm font-semibold">Komponen paket</h3>
+            {details.components.map((component, index) => <div key={index} className="space-y-2 rounded-lg bg-slate-50 p-3">
+              <Input label={`Nama komponen ${index + 1}`} value={component.name} required onChange={event => changeDetail('components', details.components.map((row, i) => i === index ? { ...row, name: event.target.value } : row))} />
+              <Input label={`Spesifikasi komponen ${index + 1}`} value={component.specs} required onChange={event => changeDetail('components', details.components.map((row, i) => i === index ? { ...row, specs: event.target.value } : row))} />
+              <Input label={`Jumlah komponen ${index + 1}`} type="number" min="1" step="1" value={component.qty} required onChange={event => changeDetail('components', details.components.map((row, i) => i === index ? { ...row, qty: Number(event.target.value) } : row))} />
+              <button type="button" className="text-sm text-rose-700 underline" onClick={() => changeDetail('components', details.components.filter((_, i) => i !== index))}>Hapus komponen {index + 1}</button>
+            </div>)}
+            <Button type="button" variant="outline" size="sm" onClick={() => changeDetail('components', [...details.components, { name: '', specs: '', qty: 1 }])}>Tambah komponen</Button>
+          </section>
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
             <Button variant="ghost" size="sm" type="button" onClick={() => setIsModalOpen(false)}>
               Batal
             </Button>
-            <Button variant="primary" size="md" type="submit">
+            <Button variant="primary" size="md" type="submit" isLoading={isSaving}>
               {editingPkgId ? 'Simpan Perubahan' : 'Buat Paket'}
             </Button>
           </div>
-        </form>
+        </fieldset></form>
+      </Modal>
+      <Modal isOpen={!!pendingDelete} onClose={() => { if (!isDeleting) setPendingDelete(null); }} title="Hapus paket?">
+        <p className="text-sm leading-7">Paket <strong>{pendingDelete?.name}</strong> akan dihapus dari katalog aktif. Lanjutkan hanya jika paket ini memang tidak digunakan lagi.</p>
+        <div className="mt-6 flex justify-end gap-3"><Button variant="ghost" disabled={isDeleting} onClick={() => setPendingDelete(null)}>Batal</Button><Button variant="danger" isLoading={isDeleting} onClick={confirmDelete}>Hapus paket</Button></div>
       </Modal>
     </div>
   );

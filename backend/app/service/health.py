@@ -5,6 +5,8 @@ from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from redis.exceptions import RedisError
+from app.utils.rate_limit import auth_redis
 
 
 def health() -> dict[str, str]:
@@ -20,4 +22,10 @@ def readiness(db: Session) -> dict[str, str]:
             raise HTTPException(status_code=503, detail="Database schema is not ready")
     except SQLAlchemyError:
         raise HTTPException(status_code=503, detail="Database is not ready") from None
+    try:
+        store = auth_redis()
+        if not store.ping() or store.config_get("maxmemory-policy").get("maxmemory-policy") != "noeviction":
+            raise HTTPException(status_code=503, detail="Authentication storage is not ready")
+    except RedisError:
+        raise HTTPException(status_code=503, detail="Authentication storage is not ready") from None
     return {"status": "ready", "schema": revision}

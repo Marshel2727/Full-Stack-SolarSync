@@ -14,8 +14,7 @@ import {
 import { useAuth } from './AuthContext';
 import { usePathname } from 'next/navigation';
 import { useCatalog, useCatalogWrite } from '../lib/queries';
-import { CacheStatus } from '../components/shared/CacheStatus';
-import { calculateSolarSystem } from '../utils/calculator';
+import { calculateSolarSystem, calculatorErrors } from '../utils/calculator';
 
 interface ToastMessage {
   id: string;
@@ -33,10 +32,11 @@ export interface DataState {
 }
 
 interface SolarContextType {
-  dataState: Record<'packages' | 'articles' | 'requests', DataState>;
+  dataState: Record<'packages' | 'articles' | 'requests' | 'faqs', DataState>;
   // Calculator
   calculatorInput: CalculatorInput;
   calculatorResult: CalculatorResult | null;
+  calculatorReady: boolean;
   setCalculatorInput: (input: Partial<CalculatorInput>) => void;
   runCalculation: () => CalculatorResult;
   resetCalculator: () => void;
@@ -77,7 +77,7 @@ interface SolarContextType {
 const defaultCalculatorInput: CalculatorInput = {
   city: 'Jakarta',
   propertyType: 'household',
-  monthlyKwh: 450,
+  monthlyKwh: 0,
   monthlyBillIdr: 750000,
   plnPowerVa: 2200,
   roofAreaSqM: 30,
@@ -92,6 +92,27 @@ export const SolarProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Calculator State
   const [calculatorInput, setCalcInputState] = useState<CalculatorInput>(defaultCalculatorInput);
   const [calculatorResult, setCalculatorResult] = useState<CalculatorResult | null>(null);
+  const [calculatorReady, setCalculatorReady] = useState(false);
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('solarsync_calc_input');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          const restored = { ...defaultCalculatorInput, ...parsed };
+          const errors = calculatorErrors(restored);
+          // Keep incomplete numeric entries for editing; only restore valid results.
+          if (!errors.city && !errors.propertyType && !errors.roofOrientation && !errors.shadingCondition) {
+            setCalcInputState(restored);
+            if (!Object.values(errors).some(Boolean) && sessionStorage.getItem('solarsync_calc_result')) {
+              setCalculatorResult(calculateSolarSystem(restored));
+            }
+          }
+        }
+      }
+    } catch { /* A blocked or malformed storage entry must not block the form. */ }
+    finally { setCalculatorReady(true); }
+  }, []);
 
   const catalog = useCatalog();
   const writer = useCatalogWrite();
@@ -114,6 +135,8 @@ export const SolarProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Calculator Methods
   const setCalculatorInput = (input: Partial<CalculatorInput>) => {
+    setCalculatorResult(null);
+    try { sessionStorage.removeItem('solarsync_calc_result'); } catch {}
     setCalcInputState((prev) => {
       const updated = { ...prev, ...input };
       try {
@@ -127,6 +150,7 @@ export const SolarProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const result = calculateSolarSystem(calculatorInput);
     setCalculatorResult(result);
     try {
+      sessionStorage.setItem('solarsync_calc_input', JSON.stringify(calculatorInput));
       sessionStorage.setItem('solarsync_calc_result', JSON.stringify(result));
     } catch {}
     return result;
@@ -135,8 +159,10 @@ export const SolarProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const resetCalculator = () => {
     setCalcInputState(defaultCalculatorInput);
     setCalculatorResult(null);
-    sessionStorage.removeItem('solarsync_calc_result');
-    sessionStorage.removeItem('solarsync_calc_input');
+    try {
+      sessionStorage.removeItem('solarsync_calc_result');
+      sessionStorage.removeItem('solarsync_calc_input');
+    } catch {}
   };
 
   // Toast Helpers
@@ -206,6 +232,7 @@ export const SolarProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       value={{
         calculatorInput,
         calculatorResult,
+        calculatorReady,
         setCalculatorInput,
         runCalculation,
         resetCalculator,
@@ -231,23 +258,10 @@ export const SolarProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         toasts,
         showToast,
         removeToast,
-        dataState: { packages: catalog.packages, articles: catalog.articles, requests: catalog.requests },
+        dataState: { packages: catalog.packages, articles: catalog.articles, requests: catalog.requests, faqs: catalog.faqs },
       }}
     >
       {children}
-      {!pathname.startsWith('/admin') && !pathname.startsWith('/dashboard') && <div className="border-t border-slate-100 bg-surface px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
-        <CacheStatus updatedAt={Math.min(catalog.packages.dataUpdatedAt, catalog.articles.dataUpdatedAt, catalog.faqs.dataUpdatedAt)}
-          failed={catalog.packages.isError || catalog.articles.isError || catalog.faqs.isError || catalog.requests.isError}
-          pending={catalog.packages.isPending || catalog.articles.isPending || catalog.faqs.isPending} />
-          <button type="button"
-            onClick={() => { void catalog.packages.refetch(); void catalog.articles.refetch(); void catalog.faqs.refetch(); }}
-            disabled={catalog.packages.isFetching || catalog.articles.isFetching || catalog.faqs.isFetching}
-            className="self-start rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-50 sm:shrink-0 sm:self-auto">
-            Segarkan
-          </button>
-        </div>
-      </div>}
     </SolarContext.Provider>
   );
 };

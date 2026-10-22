@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '../../../components/shared/Navbar';
@@ -29,9 +30,16 @@ export default function PackageDetailPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
-  const { getPackageBySlug } = useSolar();
+  const { getPackageBySlug, dataState } = useSolar();
 
   const pkg = getPackageBySlug(slug);
+
+  if (!pkg && (dataState.packages.isPending || dataState.packages.isError)) {
+    const state = dataState.packages;
+    return <div className="min-h-screen bg-surface"><Navbar /><main className="mx-auto max-w-4xl px-4 py-14">
+      {state.isPending ? <SkeletonLoader count={4} className="h-24 w-full" /> : <div role="alert" className="rounded-2xl border bg-white p-8 text-center"><h1 className="text-xl font-bold">Data belum dapat dimuat</h1><p className="my-4 text-sm text-slate-500">Periksa koneksi lalu coba lagi.</p><Button onClick={() => void state.refetch()}>Coba lagi</Button></div>}
+    </main><Footer /></div>;
+  }
 
   if (!pkg) {
     return (

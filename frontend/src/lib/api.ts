@@ -24,7 +24,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (!response.ok) {
       const message = typeof body?.detail === 'string' ? body.detail : 'Permintaan gagal (' + response.status + ')';
       // Bad credentials are not evidence that an existing session has expired.
-      if (response.status === 401 && path !== '/auth/login' && typeof window !== 'undefined') {
+      if (response.status === 401 && !['/auth/login', '/auth/google/link'].includes(path) && typeof window !== 'undefined') {
         window.dispatchEvent(new Event('solarsync-session-expired'));
       }
       const seconds = Number(response.headers.get('Retry-After'));

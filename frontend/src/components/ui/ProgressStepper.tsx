@@ -42,7 +42,8 @@ export const ProgressStepper: React.FC<ProgressStepperProps> = ({
               )}
 
               {/* Step indicator */}
-              <div
+              <button type="button" disabled={!onStepClick || idx > currentStep}
+                aria-label={`Langkah ${idx + 1}: ${step.label}`} aria-current={isCurrent ? "step" : undefined}
                 onClick={() => onStepClick && onStepClick(idx)}
                 className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full font-semibold text-xs transition-all duration-300 ${
                   onStepClick ? 'cursor-pointer' : ''
@@ -55,7 +56,7 @@ export const ProgressStepper: React.FC<ProgressStepperProps> = ({
                 }`}
               >
                 {isCompleted ? <Check className="w-4 h-4" /> : idx + 1}
-              </div>
+              </button>
 
               {/* Text */}
               <div className="flex-1 pt-0.5">
@@ -100,7 +101,8 @@ export const ProgressStepper: React.FC<ProgressStepperProps> = ({
           const isCurrent = idx === currentStep;
 
           return (
-            <div
+            <button type="button" disabled={!onStepClick || idx > currentStep}
+              aria-current={isCurrent ? "step" : undefined}
               key={step.id}
               onClick={() => onStepClick && onStepClick(idx)}
               className={`relative z-10 flex min-w-0 flex-1 flex-col items-center group ${
@@ -125,7 +127,7 @@ export const ProgressStepper: React.FC<ProgressStepperProps> = ({
               >
                 {step.label}
               </span>
-            </div>
+            </button>
           );
         })}
       </div>

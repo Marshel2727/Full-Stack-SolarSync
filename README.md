@@ -18,7 +18,7 @@ Proyek ini mengangkat subtema **SDG 7 — Integrated Clean Energy Ecosystem**. I
 | Pengajuan instalasi | Mengirim pengajuan ke database dengan persetujuan pengguna dan nomor tiket. Dapat digunakan oleh tamu maupun pengguna yang login. |
 | Lampiran pengajuan | Maksimal satu foto atap JPG/PNG dan satu struk PLN JPG/PNG/PDF, masing-masing 5 MiB. Unduh memerlukan sesi dan izin admin/pemilik tiket. |
 | Pengelolaan pengajuan | Admin melihat pengajuan, mengunduh lampiran, dan memperbarui status beserta catatan. |
-| Login admin/customer | Password Argon2, sesi server melalui cookie HttpOnly, pemeriksaan role/kepemilikan, serta pembatasan percobaan login melalui Redis terpisah. |
+| Login pelanggan/admin | Pelanggan memakai Google (perlu OAuth Client Google Cloud); admin memakai kata sandi Argon2. Sesi HttpOnly, pemeriksaan role/kepemilikan, dan limiter Redis. Akun lama dihubungkan setelah verifikasi kata sandi lama dan identitas Google. |
 | Dashboard dan riwayat energi | Membaca data sistem yang diizinkan dari API. Ringkasan dashboard diperbarui dengan polling saat tab aktif. |
 | Cache data | TanStack Query di frontend dan Redis di backend; hak akses tetap diperiksa sebelum data privat dikembalikan. |
 
@@ -26,17 +26,23 @@ Kalkulator menggunakan asumsi tetap dalam kode, bukan tarif atau harga yang dipe
 
 ## Teknologi
 
+Konfigurasi login Google dan penghubungan akun lama dijelaskan di [AUTH_PRODUCTION.md](AUTH_PRODUCTION.md#login-pelanggan-melalui-google). Tanpa kredensial Google, login pelanggan dinonaktifkan dengan pesan yang jelas; login admin tetap tersedia di `/login?mode=admin`.
+
 | Bagian | Teknologi |
 | --- | --- |
-| Frontend | Next.js 14 App Router, React 18, TypeScript, Tailwind CSS |
+| Frontend | Next.js 16 App Router, React 19, Node.js 24, TypeScript, Tailwind CSS |
 | Data dan visualisasi frontend | TanStack Query 5, Chart.js, React Chart.js 2, Lucide React |
 | Backend | Python 3.12 pada Docker, FastAPI, Pydantic Settings, Uvicorn |
 | Database dan migrasi | MySQL 8.4, SQLAlchemy 2, PyMySQL, Alembic |
 | Cache dan pembatasan login | Dua instance Redis 7.4 dengan fungsi terpisah |
-| Pengujian | Python unittest dan Vitest |
-| Lingkungan lokal | Docker Compose v2 |
+| Pengujian | Python unittest, Vitest, ESLint, TypeScript, dan Playwright; workflow GitHub Actions |
+| Lingkungan lokal | Docker Compose 2.24.4+ |
 
-Versi dependency lengkap tersedia di [`frontend/package.json`](frontend/package.json), [`frontend/package-lock.json`](frontend/package-lock.json), dan [`backend/requirements.txt`](backend/requirements.txt).
+Versi dependency tersedia di [`frontend/package.json`](frontend/package.json), [`frontend/package-lock.json`](frontend/package-lock.json), [`backend/requirements.txt`](backend/requirements.txt), dan constraint [`backend/requirements.lock`](backend/requirements.lock).
+
+Operasi lokal, konfigurasi HTTPS produksi, backup SQL/upload, serta pemulihan ke lingkungan terisolasi dijelaskan di [DOCKER.md](DOCKER.md). Konfigurasi produksi terpisah menjaga `.env` lokal tetap dapat digunakan.
+
+Untuk **backend di VPS Ubuntu dan frontend di Vercel**, gunakan [panduan VPS + Vercel](DEPLOY_VPS_VERCEL.md). Susunan tersebut memakai proxy API pada domain frontend agar cookie sesi dan login Google tetap sesuai.
 
 ## Struktur proyek
 
@@ -144,7 +150,7 @@ Dockerfile frontend memakai `npm ci` dan lockfile yang disertakan. Instalasi npm
 docker compose run --rm solarsync-backend python -m app.create_user
 ```
 
-Isi email, nama, role `admin`, dan password sepanjang **15–1024 karakter**, lalu ulangi password. Password diketik secara tersembunyi. Walaupun prompt CLI masih menyebut minimal 12 karakter, validasi saat ini mensyaratkan minimal 15 karakter.
+Isi email, nama, role `admin`, dan password sepanjang **15–1024 karakter**, lalu ulangi password. Password diketik secara tersembunyi. Pesan keberhasilan admin mengarahkan ke halaman masuk admin.
 
 Tidak ada email/password admin bawaan. CLI menolak email yang sudah terdaftar dan tidak menimpa akun tersebut.
 
@@ -180,7 +186,7 @@ Pengajuan tamu tidak otomatis terhubung ke akun yang dibuat kemudian walaupun em
 
 ## Pengembangan frontend di Windows
 
-Untuk mengubah frontend dengan hot reload, gunakan Node.js 20 dan layanan backend/database/Redis dari instalasi Docker di atas. Dari root proyek, hentikan frontend Docker agar port `3000` tersedia:
+Untuk mengubah frontend dengan hot reload, gunakan Node.js 24 dan layanan backend/database/Redis dari instalasi Docker di atas. Dari root proyek, hentikan frontend Docker agar port `3000` tersedia:
 
 ```powershell
 docker compose stop solarsync-frontend
@@ -201,13 +207,13 @@ Tes backend dari root proyek, setelah image selesai dibangun:
 docker compose run --rm --no-deps -e APP_ENVIRONMENT=test -e COOKIE_SECURE=false solarsync-backend python -m unittest discover -s tests -v
 ```
 
-Tes frontend dan pemeriksaan TypeScript dari folder `frontend`, dengan Node.js 20:
+Tes frontend dan pemeriksaan TypeScript dari folder `frontend`, dengan Node.js 24:
 
 ```powershell
 npm.cmd ci
-npm.cmd run test:auth
-npm.cmd run test:cache
-npx.cmd tsc --noEmit
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test
 npm.cmd run build
 ```
 

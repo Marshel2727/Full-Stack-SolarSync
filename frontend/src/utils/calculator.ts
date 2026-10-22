@@ -1,21 +1,46 @@
 import { CalculatorInput, CalculatorResult } from '../types';
 
+// Illustrative planning assumptions, not measured city weather or a site survey.
+export const citySunHours: Record<string, number> = {
+  Jakarta: 4, Bogor: 3.8, Depok: 4, Tangerang: 4.1, Bekasi: 4.1,
+  Bandung: 3.9, Semarang: 4.2, Surabaya: 4.3, Denpasar: 4.4,
+  Medan: 3.9, Makassar: 4.2, Other: 4,
+};
+
+export function calculatorErrors(input: CalculatorInput) {
+  const positive = (n: number) => Number.isFinite(n) && n > 0;
+  return {
+    city: !Object.hasOwn(citySunHours, input.city) ? 'Pilih kota pemasangan.' : '',
+    propertyType: !['household', 'business', 'industry', 'school', 'other'].includes(input.propertyType) ? 'Pilih jenis bangunan.' : '',
+    monthlyBillIdr: !positive(input.monthlyBillIdr) ? 'Isi tagihan bulanan lebih dari Rp0.' : '',
+    plnPowerVa: !positive(input.plnPowerVa) ? 'Pilih daya listrik yang valid.' : '',
+    roofAreaSqM: !Number.isFinite(input.roofAreaSqM) || input.roofAreaSqM < 5 ? 'Luas atap minimal 5 m² untuk dua panel.' : '',
+    roofOrientation: input.roofOrientation && !['utara', 'selatan', 'timur', 'barat', 'optimal'].includes(input.roofOrientation) ? 'Pilih orientasi atap yang valid.' : '',
+    shadingCondition: input.shadingCondition && !['none', 'partial', 'heavy'].includes(input.shadingCondition) ? 'Pilih kondisi bayangan yang valid.' : '',
+    targetCoveragePercent: !positive(input.targetCoveragePercent) || input.targetCoveragePercent > 100 ? 'Target harus lebih dari 0% dan maksimal 100%.' : '',
+    monthlyKwh: !Number.isFinite(input.monthlyKwh) || input.monthlyKwh < 0 ? 'Konsumsi listrik tidak valid.' : '',
+  };
+}
+
+export function tariffAssumption(input: Pick<CalculatorInput, 'propertyType' | 'plnPowerVa'>) {
+  if (input.propertyType === 'business') return 1550;
+  if (input.propertyType === 'industry') return 1380;
+  return input.plnPowerVa >= 6600 ? 1699.53 : 1444.7;
+}
+
 export const calculateSolarSystem = (input: CalculatorInput): CalculatorResult => {
-  const sunHoursPerDay = 4.0; // Rata-rata Indonesia (3.8 - 4.2 jam puncak/hari)
-  const systemEfficiency = 0.80; // Performance ratio sistem PLTS (80%)
+  const invalid = Object.values(calculatorErrors(input)).find(Boolean);
+  if (invalid) throw new Error(invalid);
+  const sunHoursPerDay = citySunHours[input.city];
+  const orientationFactor = { optimal: 1, utara: 0.95, selatan: 0.95, timur: 0.85, barat: 0.85 }[input.roofOrientation || 'optimal'];
+  const shadingFactor = { none: 1, partial: 0.85, heavy: 0.55 }[input.shadingCondition || 'none'];
+  const systemEfficiency = 0.8 * orientationFactor * shadingFactor;
   const panelWattPeak = 550; // Standar Tier-1 Monocrystalline PERC (550 Wp)
   const areaPerPanelSqM = 2.5; // m² per panel 550 Wp
   const emissionFactor = 0.85; // kg CO2 per kWh (Grid Nasional)
   
   // Penentuan tarif dasar listrik berdasarkan jenis properti atau daya
-  let tariffPerKwh = 1444.70; // Golongan R-1M / R-1 900VA - 2200VA
-  if (input.propertyType === 'business') {
-    tariffPerKwh = 1550.00;
-  } else if (input.propertyType === 'industry') {
-    tariffPerKwh = 1380.00;
-  } else if (input.plnPowerVa >= 6600) {
-    tariffPerKwh = 1699.53;
-  }
+  const tariffPerKwh = tariffAssumption(input);
 
   // Jika monthlyKwh belum diisi tetapi ada monthlyBill, estimasikan monthlyKwh
   let effectiveMonthlyKwh = input.monthlyKwh;
@@ -38,10 +63,8 @@ export const calculateSolarSystem = (input: CalculatorInput): CalculatorResult =
   if (panelCount < 2) panelCount = 2; // Minimal 2 panel untuk string inverter kecil
 
   // Cek batasan luas atap jika disediakan
-  const maxPanelsByRoof = input.roofAreaSqM > 0 ? Math.floor(input.roofAreaSqM / areaPerPanelSqM) : 999;
-  if (maxPanelsByRoof > 0 && panelCount > maxPanelsByRoof) {
-    panelCount = Math.max(2, maxPanelsByRoof);
-  }
+  const maxPanelsByRoof = Math.floor(input.roofAreaSqM / areaPerPanelSqM);
+  panelCount = Math.min(panelCount, maxPanelsByRoof);
 
   const recommendedCapacityKwp = Number(((panelCount * panelWattPeak) / 1000).toFixed(2));
   const requiredRoofAreaSqM = Number((panelCount * areaPerPanelSqM).toFixed(1));
@@ -89,6 +112,8 @@ export const calculateSolarSystem = (input: CalculatorInput): CalculatorResult =
       tariffPerKwh,
       emissionFactor,
       systemEfficiency,
+      orientationFactor,
+      shadingFactor,
     }
   };
 };

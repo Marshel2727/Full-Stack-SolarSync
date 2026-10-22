@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '../../../components/shared/Navbar';
@@ -27,16 +27,45 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+function useCountUp(target: number, decimals = 0, durationMs = 650) {
+  const [value, setValue] = useState(target);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setValue(target);
+      return;
+    }
+    let frameId = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+      const current = target * eased;
+      setValue(decimals > 0 ? Number(current.toFixed(decimals)) : Math.round(current));
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick);
+      }
+    };
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [target, decimals, durationMs]);
+
+  return value;
+}
+
 export default function CalculatorResultPage() {
   const router = useRouter();
-  const { calculatorResult, calculatorInput, runCalculation } = useSolar();
+  const { calculatorResult, calculatorInput, calculatorReady } = useSolar();
 
   // If page is accessed directly without calculation, calculate on the fly
   useEffect(() => {
-    if (!calculatorResult) {
-      runCalculation();
-    }
-  }, [calculatorResult, runCalculation]);
+    if (calculatorReady && !calculatorResult) router.replace('/calculator');
+  }, [calculatorReady, calculatorResult, router]);
+
+  const animatedKwp = useCountUp(calculatorResult?.recommendedCapacityKwp ?? 0, 2);
+  const animatedMonthlySavings = useCountUp(calculatorResult?.estimatedMonthlySavingsIdr ?? 0, 0);
+  const animatedMonthlyProd = useCountUp(calculatorResult?.estimatedMonthlyProductionKwh ?? 0, 0);
+  const animatedCo2 = useCountUp(calculatorResult?.annualCo2ReductionKg ?? 0, 0);
 
   if (!calculatorResult) {
     return (
@@ -74,7 +103,7 @@ export default function CalculatorResultPage() {
     <div className="min-h-screen bg-surface flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-10">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-10 animate-fadeIn">
         {/* Header Title */}
         <div className="text-center max-w-2xl mx-auto space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-primary text-xs font-bold border border-emerald-200">
@@ -96,9 +125,9 @@ export default function CalculatorResultPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
             <div className="lg:col-span-7 space-y-4">
               <Badge variant="solar" size="md">REKOMENDASI OPTIMAL</Badge>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-2 tabular-nums">
                 <span className="text-5xl sm:text-6xl font-black font-heading text-white tracking-tight">
-                  {recommendedCapacityKwp}
+                  {animatedKwp.toFixed(2).replace(/\.00$/, '')}
                 </span>
                 <span className="text-2xl font-bold text-solar">kWp</span>
               </div>
@@ -123,7 +152,7 @@ export default function CalculatorResultPage() {
             <div className="lg:col-span-5 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 space-y-4">
               <div>
                 <span className="text-xs text-emerald-200 uppercase font-semibold">Estimasi Investasi Awal</span>
-                <p className="text-2xl sm:text-3xl font-black font-heading text-white mt-1">
+                <p className="text-2xl sm:text-3xl font-black font-heading text-white mt-1 tabular-nums">
                   {formatCurrency(estimatedCostMinIdr)}
                 </p>
                 <span className="text-[11px] text-emerald-200/80">s/d {formatCurrency(estimatedCostMaxIdr)} (All-in)</span>
@@ -131,8 +160,8 @@ export default function CalculatorResultPage() {
 
               <div className="pt-4 border-t border-white/15">
                 <span className="text-xs text-emerald-200 uppercase font-semibold">Estimasi Penghematan</span>
-                <p className="text-xl font-extrabold text-solar font-heading mt-0.5">
-                  {formatCurrency(estimatedMonthlySavingsIdr)} <span className="text-xs text-white font-normal">/ bulan</span>
+                <p className="text-xl font-extrabold text-solar font-heading mt-0.5 tabular-nums">
+                  {formatCurrency(animatedMonthlySavings)} <span className="text-xs text-white font-normal">/ bulan</span>
                 </p>
                 <p className="text-xs text-emerald-100/90 font-medium">
                   Atau setara <strong>{formatCurrency(estimatedAnnualSavingsIdr)}</strong> per tahun
@@ -153,7 +182,7 @@ export default function CalculatorResultPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Produksi Bulanan"
-            value={formatNumber(estimatedMonthlyProductionKwh, 0)}
+            value={formatNumber(animatedMonthlyProd, 0)}
             unit="kWh/bln"
             subtitle={`Tahunan: ~${formatKwh(estimatedAnnualProductionKwh)}`}
             icon={<Zap className="w-5 h-5 text-solar-dark" />}
@@ -161,7 +190,7 @@ export default function CalculatorResultPage() {
 
           <StatCard
             title="Pengurangan Emisi"
-            value={formatNumber(annualCo2ReductionKg, 0)}
+            value={formatNumber(animatedCo2, 0)}
             unit="kg CO₂/thn"
             subtitle="Jejak karbon terhindar"
             icon={<Leaf className="w-5 h-5 text-emerald-600" />}
@@ -222,7 +251,7 @@ export default function CalculatorResultPage() {
             <span>Asumsi Perhitungan & Catatan Teknis:</span>
           </div>
           <p className="leading-relaxed text-slate-600">
-            Perhitungan ini adalah <strong>estimasi awal</strong> berbasis radiasi matahari rata-rata wilayah Indonesia ({calculationAssumptions.sunHoursPerDay} Jam Puncak/hari), tarif listrik PLN Rp {calculationAssumptions.tariffPerKwh.toLocaleString('id-ID')}/kWh, dan faktor kinerja sistem {calculationAssumptions.systemEfficiency * 100}%. Desain final (jumlah string, perutean kabel, dan kapasitas inverter) akan disesuaikan setelah survei fisik atap onsite oleh tim teknisi SolarSync.
+            Perhitungan ini memakai <strong>asumsi simulasi awal</strong>: penyinaran {calculationAssumptions.sunHoursPerDay} jam ekuivalen/hari untuk {calculatorInput.city}, tarif contoh Rp {calculationAssumptions.tariffPerKwh.toLocaleString('id-ID')}/kWh, faktor orientasi {calculationAssumptions.orientationFactor}, faktor bayangan {calculationAssumptions.shadingFactor}, dan faktor kinerja gabungan {(calculationAssumptions.systemEfficiency * 100).toFixed(1)}%. Nilai tersebut bukan data cuaca terukur atau tarif resmi terkini. Penghematan mengasumsikan energi produksi yang dihitung dapat dipakai untuk menggantikan pembelian listrik; pola beban siang hari belum dimodelkan. Desain final (jumlah string, perutean kabel, dan kapasitas inverter) akan disesuaikan setelah survei fisik atap onsite oleh tim teknisi SolarSync.
           </p>
         </div>
 

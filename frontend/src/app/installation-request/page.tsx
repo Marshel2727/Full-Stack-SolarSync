@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef, Suspense } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Navbar } from '../../components/shared/Navbar';
 import { Footer } from '../../components/shared/Footer';
@@ -31,7 +32,7 @@ import {
 function InstallationRequestForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { calculatorInput, calculatorResult, packages, createRequest, showToast } = useSolar();
 
   const prefilledPackageSlug = searchParams.get('package') || '';
@@ -60,6 +61,14 @@ function InstallationRequestForm() {
   const [billFile, setBillFile] = useState<File | null>(null);
   const submitting = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    setFullName(value => value || user.name);
+    setEmail(value => value || user.email);
+    setPhoneNumber(value => value || user.phone);
+  }, [user?.id]);
+  const continueHere = '/installation-request' + (searchParams.toString() ? '?' + searchParams.toString() : '');
 
   // Success Modal
   const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
@@ -131,6 +140,13 @@ function InstallationRequestForm() {
             Isi data di bawah ini untuk penjadwalan survei lokasi onsite dan penerbitan penawaran resmi (Detailed Engineering Design).
           </p>
         </div>
+
+        {!user && !authLoading && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-950">
+          <h2 className="font-bold">Ingin memantau pengajuan dengan mudah?</h2>
+          <p className="mt-2">Daftar atau masuk sebelum mengirim agar pengajuan ini langsung tersedia di akun Anda.</p>
+          <div className="mt-4 flex flex-wrap gap-3"><Link href={'/register?next=' + encodeURIComponent(continueHere)} className="rounded-xl bg-primary px-4 py-2 font-semibold text-white">Daftar akun pelanggan</Link><Link href={'/login?next=' + encodeURIComponent(continueHere)} className="rounded-xl border border-emerald-300 px-4 py-2 font-semibold">Sudah punya akun? Masuk</Link></div>
+          <p className="mt-3 text-xs">Anda tetap bisa melanjutkan sebagai tamu. Pengajuan tamu perlu verifikasi administrator sebelum ditautkan ke akun.</p>
+        </div>}
 
         {/* Highlight if came from calculator or package */}
         {(fromCalc && calculatorResult) && (
@@ -227,7 +243,9 @@ function InstallationRequestForm() {
                     { value: 'Bandung', label: 'Bandung' },
                     { value: 'Semarang', label: 'Semarang' },
                     { value: 'Surabaya', label: 'Surabaya' },
-                    { value: 'Bali', label: 'Bali / Denpasar' },
+                    { value: 'Denpasar', label: 'Denpasar / Bali' },
+                    { value: 'Medan', label: 'Medan' },
+                    { value: 'Makassar', label: 'Makassar' },
                     { value: 'Other', label: 'Kota Lainnya' },
                   ]}
                 />
@@ -240,6 +258,7 @@ function InstallationRequestForm() {
                     { value: 'business', label: 'Bisnis / Ruko / Kafe' },
                     { value: 'industry', label: 'Industri / Pabrik' },
                     { value: 'school', label: 'Sekolah / Fasilitas Umum' },
+                    { value: 'other', label: 'Lainnya' },
                   ]}
                 />
               </div>
@@ -256,23 +275,29 @@ function InstallationRequestForm() {
                 <Input
                   label="Daya PLN (VA)"
                   type="number"
-                  value={plnPowerVa}
+                  min={1}
+                  value={plnPowerVa || ''}
                   onChange={(e) => setPlnPowerVa(Number(e.target.value))}
                   suffixText="VA"
+                  required
                 />
                 <Input
                   label="Tagihan Bulanan (Rp)"
                   type="number"
-                  value={monthlyBillIdr}
+                  min={1}
+                  value={monthlyBillIdr || ''}
                   onChange={(e) => setMonthlyBillIdr(Number(e.target.value))}
                   prefixText="Rp"
+                  required
                 />
                 <Input
                   label="Estimasi Luas Atap (m²)"
                   type="number"
-                  value={roofAreaSqM}
+                  min={5}
+                  value={roofAreaSqM || ''}
                   onChange={(e) => setRoofAreaSqM(Number(e.target.value))}
                   suffixText="m²"
+                  required
                 />
               </div>
             </div>
@@ -370,10 +395,10 @@ function InstallationRequestForm() {
               className="flex-1"
               onClick={() => {
                 setIsModalOpen(false);
-                router.push(user ? '/dashboard/installation' : '/login');
+                router.push(user ? '/dashboard/installation' : '/register?next=%2Fdashboard%2Finstallation');
               }}
             >
-              {user ? 'Lacak di Dashboard →' : 'Masuk ke akun →'}
+              {user ? 'Pantau pengajuan →' : 'Buat akun pelanggan →'}
             </Button>
           </div>
         </div>

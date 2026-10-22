@@ -10,6 +10,20 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
+class RedactOAuthQuery(logging.Filter):
+    """Uvicorn's access log otherwise includes Google's code/state query values."""
+    def filter(self, record):
+        if isinstance(record.args, tuple) and len(record.args) == 5:
+            args = list(record.args)
+            if isinstance(args[2], str) and args[2].startswith("/api/v1/auth/google/callback?"):
+                args[2] = "/api/v1/auth/google/callback"
+                record.args = tuple(args)
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(RedactOAuthQuery())
+
+
 async def api_cache_policy(request: Request, call_next):
     # Cookie-authenticated writes require an explicit allowed browser origin.
     # This also protects login against login-CSRF. CLI clients supply Origin.

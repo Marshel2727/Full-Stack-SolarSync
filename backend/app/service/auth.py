@@ -55,7 +55,7 @@ def admin_user(user):
     return user
 
 
-def login(data: LoginInput, previous, db):
+def verify_password(data: LoginInput, db, required_role="admin"):
     check_global_login_rate()
     user = db.scalar(select(User).where(or_(User.email == data.identifier.strip(),
                                            User.phone == data.identifier.strip())))
@@ -67,25 +67,37 @@ def login(data: LoginInput, previous, db):
         logger.warning("auth_password_hash_invalid")
         passwords.verify(data.password.get_secret_value(), DUMMY_HASH)
         valid, updated_hash = False, None
-    if not valid or not user or not user.is_active:
+    if not valid or not user or not user.is_active or user.role != required_role:
         raise HTTPException(401, "Email/nomor HP atau password salah")
     # Refresh under a lock after hashing to catch concurrent disable/password change.
     user = db.scalar(select(User).where(User.id == user.id).with_for_update()
                      .execution_options(populate_existing=True))
-    if not user or not user.is_active or user.password_hash != stored_hash:
+    if not user or not user.is_active or user.role != required_role or user.password_hash != stored_hash:
         raise HTTPException(401, "Email/nomor HP atau password salah")
     if updated_hash:
         user.password_hash = updated_hash
+    return user
+
+
+def issue_session(user, previous_hash, db):
+    """Stage an opaque session in the caller's transaction; never commit early."""
     now = datetime.utcnow()
-    if valid_token(previous):
+    if previous_hash:
         db.execute(update(AuthSession).where(
-            AuthSession.refresh_token_hash == digest(previous),
+            AuthSession.refresh_token_hash == previous_hash,
             AuthSession.revoked_at.is_(None)).values(revoked_at=now))
     token = secrets.token_urlsafe(48)
     db.add(AuthSession(user_id=user.id, refresh_token_hash=digest(token),
                        last_used_at=now,
                        expires_at=now + timedelta(seconds=get_settings().session_lifetime_seconds)))
     user.last_login_at = now
+    return token
+
+
+def login(data: LoginInput, previous, db):
+    # Password login is reserved for operators; customers authenticate with Google.
+    user = verify_password(data, db, required_role="admin")
+    token = issue_session(user, digest(previous) if valid_token(previous) else None, db)
     db.commit()
     return user_data(user), token
 

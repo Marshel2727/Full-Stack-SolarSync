@@ -4,31 +4,42 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src --quiet",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run src",
+    "test:e2e": "playwright test",
+    "test:e2e:cleanup": "node e2e/cleanup.mjs",
     "test:cache": "vitest run src/lib/cache-policy.test.ts",
     "test:auth": "vitest run src/lib/api.test.ts"
+  },
+  "engines": {
+    "node": ">=24 <25"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.66.0",
     "chart.js": "^4.4.7",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
-    "next": "^14.2.23",
-    "react": "^18.3.1",
+    "next": "16.4.2",
+    "react": "19.3.1",
     "react-chartjs-2": "^5.3.0",
-    "react-dom": "^18.3.1",
+    "react-dom": "19.3.1",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
-    "vitest": "^2.1.9",
-    "@types/node": "^20.17.10",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "autoprefixer": "^10.4.20",
+    "eslint": "10.13.0",
+    "eslint-config-next": "16.4.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
   }
 }

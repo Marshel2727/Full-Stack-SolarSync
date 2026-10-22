@@ -5,8 +5,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
-COPY requirements.txt ./
-RUN python -m pip install -r requirements.txt \
+COPY requirements.txt requirements.lock ./
+RUN python -m pip install -r requirements.txt -c requirements.lock \
+    && python -m pip check \
     && groupadd --system app \
     && useradd --system --gid app --home-dir /app app \
     && mkdir -p /app/private_uploads \
